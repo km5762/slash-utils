@@ -1,3 +1,7 @@
+const NB: usize = 4;
+const NK: usize = 4;
+const NR: usize = NK + 6;
+
 const SBOX: [u8; 256] = [
     0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
     0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -17,17 +21,26 @@ const SBOX: [u8; 256] = [
     0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16,
 ];
 
-fn rot_word(mut word: &[u8; 4]) {
+fn rot_word(word: &mut [u8; 4]) {
     for i in 0..4 {
         word[i] = word[(i + 1) % 4]
     }
 }
 
-fn sub_word(mut word: &[u8; 4]) {}
+fn sub_word(mut word: &mut [u8; 4]) {
+    for i in 0..4 {
+        word[i] = get_sub(word[i]);
+    }
+}
 
-fn sub_byte(mut byte: u8) {
-    const upper_nibble: u8 = byte << 4 & 0xF;
-    const lower_nibble: u8 = byte & 0xF;
+fn get_sub(byte: u8) -> u8 {
+    let upper_nibble: usize = (byte << 4 & 0xF).into();
+    let lower_nibble: usize = (byte & 0xF).into();
 
-    byte = SBOX[upper_nibble * 16 + lower_nibble];
+    SBOX[upper_nibble * 16 + lower_nibble]
+}
+
+fn key_expansion(cipher_key: [u8; 4 * NK]) -> [u32; NB * (NR + 1)] {
+    let mut key_schedule = [0u32; NB * (NR + 1)];
+    key_schedule
 }
