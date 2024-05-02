@@ -25,4 +25,9 @@ fn rot_word(mut word: &[u8; 4]) {
 
 fn sub_word(mut word: &[u8; 4]) {}
 
-fn get_sub(byte: u8) -> u8 {}
+fn sub_byte(mut byte: u8) {
+    const upper_nibble: u8 = byte << 4 & 0xF;
+    const lower_nibble: u8 = byte & 0xF;
+
+    byte = SBOX[upper_nibble * 16 + lower_nibble];
+}
