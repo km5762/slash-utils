@@ -10,4 +10,4 @@ Project Description
 
 ### COMPLETED ✓
 
-- [x] Completed task title
+- [x] AES key schedule
