@@ -21,16 +21,20 @@ const SBOX: [u8; 256] = [
     0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16,
 ];
 
-fn rot_word(word: &mut [u8; 4]) {
-    for i in 0..4 {
-        word[i] = word[(i + 1) % 4]
-    }
+const RCON: [u32; 11] = [
+    0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36,
+];
+
+fn rot_word(word: u32) -> u32 {
+    word.rotate_right(1)
 }
 
-fn sub_word(mut word: &mut [u8; 4]) {
-    for i in 0..4 {
-        word[i] = get_sub(word[i]);
+fn sub_word(word: u32) -> u32 {
+    let mut bytes = u32::to_be_bytes(word);
+    for byte in &mut bytes {
+        *byte = get_sub(*byte);
     }
+    u32::from_be_bytes(bytes)
 }
 
 fn get_sub(byte: u8) -> u8 {
@@ -40,7 +44,20 @@ fn get_sub(byte: u8) -> u8 {
     SBOX[upper_nibble * 16 + lower_nibble]
 }
 
-fn key_expansion(cipher_key: [u8; 4 * NK]) -> [u32; NB * (NR + 1)] {
-    let mut key_schedule = [0u32; NB * (NR + 1)];
-    key_schedule
+fn key_expansion(key: [u8; 4 * NK]) -> [u32; NB * (NR + 1)] {
+    let mut w = [0u32; NB * (NR + 1)];
+
+    for i in 0..NK {
+        w[i] = u32::from_be_bytes([key[4 * i], key[4 * i + 1], key[4 * i + 2], key[4 * i + 3]])
+    }
+
+    for i in NK..w.len() {
+        if (i % NK == 0) {
+            w[i] = (sub_word(rot_word(w[i - 1]))) ^ RCON[i / NK];
+        } else {
+            w[i] = w[i - NK] ^ w[i - 1];
+        }
+    }
+
+    w
 }
