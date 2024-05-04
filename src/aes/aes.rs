@@ -72,3 +72,9 @@ pub fn add_round_key(state: &mut [[u8; NB]; NB], round_key: &[u32; NB]) {
         }
     }
 }
+
+pub fn shift_rows(state: &mut [[u8; NB]; NB]) {
+    for i in 1..NB {
+        state[i].rotate_right(i);
+    }
+}
