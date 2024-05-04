@@ -45,7 +45,7 @@ pub fn get_sub(byte: u8) -> u8 {
     SBOX[upper_nibble * 16 + lower_nibble]
 }
 
-pub fn key_expansion(key: [u32; NK]) -> [u32; NB * (NR + 1)] {
+pub fn key_expansion(key: &[u32; NK]) -> [u32; NB * (NR + 1)] {
     let mut w = [0u32; NB * (NR + 1)];
 
     for i in 0..NK {
@@ -63,4 +63,12 @@ pub fn key_expansion(key: [u32; NK]) -> [u32; NB * (NR + 1)] {
     }
 
     w
+}
+
+pub fn add_round_key(state: &mut [[u8; NB]; NB], round_key: &[u32; NB]) {
+    for i in 0..NB {
+        for j in 0..NB {
+            state[i][j] ^= round_key[j].to_be_bytes()[i];
+        }
+    }
 }

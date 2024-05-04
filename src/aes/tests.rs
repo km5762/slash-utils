@@ -14,7 +14,7 @@ fn sub_word() {
 #[test]
 fn expand_128_key() {
     let key = [0x2b7e1516, 0x28aed2a6, 0xabf71588, 0x09cf4f3c];
-    let w = aes::key_expansion(key);
+    let w = aes::key_expansion(&key);
     let w_expected: [u32; 44] = [
         0x2b7e1516, 0x28aed2a6, 0xabf71588, 0x09cf4f3c, 0xa0fafe17, 0x88542cb1, 0x23a33939,
         0x2a6c7605, 0xf2c295f2, 0x7a96b943, 0x5935807a, 0x7359f67f, 0x3d80477d, 0x4716fe3e,
@@ -26,4 +26,23 @@ fn expand_128_key() {
     ];
 
     assert_eq!(w_expected, w);
+}
+
+#[test]
+fn add_round_key() {
+    let mut state = [
+        [0x47, 0x40, 0xa3, 0x4c],
+        [0x37, 0xd4, 0x70, 0x9f],
+        [0x94, 0xe4, 0x3a, 0x42],
+        [0xed, 0xa5, 0xa6, 0xbc],
+    ];
+    let round_key = [0xac7766f3, 0x19fadc21, 0x28d12941, 0x575c006a];
+    aes::add_round_key(&mut state, &round_key);
+
+    for row in state.iter() {
+        for &byte in row.iter() {
+            print!("{:#02x} ", byte);
+        }
+        println!();
+    }
 }
