@@ -16,6 +16,6 @@ Project Description
 
 - [x] AES key schedule
 - [ ] AES cipher function
-  - shift_rows()
+  - [x] shift_rows()
   - [x] add_round_key()
   - mix_columns()
