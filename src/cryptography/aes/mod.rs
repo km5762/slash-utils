@@ -1,3 +1,5 @@
+mod tests;
+
 const NB: usize = 4;
 const NK: usize = 4;
 const NR: usize = NK + 6;
@@ -76,5 +78,43 @@ pub fn add_round_key(state: &mut [[u8; NB]; NB], round_key: &[u32; NB]) {
 pub fn shift_rows(state: &mut [[u8; NB]; NB]) {
     for i in 1..NB {
         state[i].rotate_right(i);
+    }
+}
+
+pub fn mix_columns(state: &mut [[u8; NB]; NB]) {
+    let mut temp = [0u8; NB];
+    for i in 0..NB {
+        // temp[0] = state[0][i];
+        // state[0][i] = temp[1] = state[1][i];
+        // temp[2] = state[2][i];
+        // temp[3] = state[3][i];
+    }
+}
+
+pub fn multiply_galois(a: u8, b: u8) -> u8 {
+    let mut result = a;
+    let mut last = a;
+    let mut n = 0;
+    for i in 0..8 {
+        if ((b >> i) & 1) == 1 {
+            for _ in 0..n {
+                last = x_times(last);
+            }
+            if (i > 0) {
+                result ^= last;
+            }
+            n = 1;
+        } else {
+            n += 1;
+        }
+    }
+    result
+}
+
+pub fn x_times(b: u8) -> u8 {
+    if ((b >> 7) & 1) == 1 {
+        (b << 1) ^ 0x1b
+    } else {
+        b << 1
     }
 }

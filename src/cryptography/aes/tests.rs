@@ -1,5 +1,5 @@
 #[cfg(test)]
-use crate::aes::aes;
+use crate::cryptography::aes;
 
 #[test]
 fn rot_word() {
@@ -62,4 +62,9 @@ fn shift_rows() {
         [0xa5, 0xa6, 0xbc, 0xed],
     ];
     assert_eq!(state_expected, state);
+}
+
+#[test]
+fn multiply_galois() {
+    assert_eq!(0xfe, aes::multiply_galois(0x57, 0x13));
 }
