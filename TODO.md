@@ -4,8 +4,6 @@ Project Description
 
 ### TASKS
 
-- [ ] Task title ~3d #type @name yyyy-mm-dd
-  - [ ] Sub-task or description
 - [ ] AES key schedule
 - [ ] AES cipher function
   - shift_rows()
@@ -15,7 +13,11 @@ Project Description
 ### COMPLETED ✓
 
 - [x] AES key schedule
-- [ ] AES cipher function
+- [x] AES cipher function
   - [x] shift_rows()
   - [x] add_round_key()
   - [x] mix_columns()
+- [ ] AES inverse cipher
+  - [ ] inverse_shift_rows()
+  - [ ] inverse_sub_bytes()
+  - [ ] inverse_mix_columns()
