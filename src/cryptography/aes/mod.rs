@@ -150,3 +150,9 @@ pub fn sub_bytes(state: &mut [[u8; NB]; NB]) {
         }
     }
 }
+
+pub fn inverse_shift_rows(state: &mut [[u8; NB]; NB]) {
+    for i in 1..NB {
+        state[i].rotate_right(i);
+    }
+}

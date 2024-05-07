@@ -18,6 +18,6 @@ Project Description
   - [x] add_round_key()
   - [x] mix_columns()
 - [ ] AES inverse cipher
-  - [ ] inverse_shift_rows()
+  - [x] inverse_shift_rows()
   - [ ] inverse_sub_bytes()
   - [ ] inverse_mix_columns()
