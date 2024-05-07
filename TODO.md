@@ -19,5 +19,5 @@ Project Description
   - [x] mix_columns()
 - [ ] AES inverse cipher
   - [x] inverse_shift_rows()
-  - [ ] inverse_sub_bytes()
-  - [ ] inverse_mix_columns()
+  - [x] inverse_sub_bytes()
+  - [x] inverse_mix_columns()
