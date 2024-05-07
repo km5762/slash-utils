@@ -216,3 +216,21 @@ pub fn inv_mix_columns(state: &mut [[u8; NB]; NB]) {
             ^ multiply_galois(s3, 0x0e);
     }
 }
+
+pub fn inv_cipher(encrypted_block: &[u8; 16], w: &[u32; 44]) -> [[u8; NB]; NB] {
+    let mut state = load_state(encrypted_block);
+    add_round_key(&mut state, &w[w.len() - 4..]);
+
+    for round in (1..NR).rev() {
+        inv_shift_rows(&mut state);
+        inv_sub_bytes(&mut state);
+        add_round_key(&mut state, &w[(4 * round)..(4 * round + 4)]);
+        inv_mix_columns(&mut state);
+    }
+
+    inv_shift_rows(&mut state);
+    inv_sub_bytes(&mut state);
+    add_round_key(&mut state, &w[0..4]);
+
+    state
+}
