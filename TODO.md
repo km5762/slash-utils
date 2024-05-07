@@ -18,4 +18,4 @@ Project Description
 - [ ] AES cipher function
   - [x] shift_rows()
   - [x] add_round_key()
-  - mix_columns()
+  - [x] mix_columns()

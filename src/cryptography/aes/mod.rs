@@ -67,7 +67,7 @@ pub fn key_expansion(key: &[u32; NK]) -> [u32; NB * (NR + 1)] {
     w
 }
 
-pub fn add_round_key(state: &mut [[u8; NB]; NB], round_key: &[u32; NB]) {
+pub fn add_round_key(state: &mut [[u8; NB]; NB], round_key: &[u32]) {
     for i in 0..NB {
         for j in 0..NB {
             state[i][j] ^= round_key[j].to_be_bytes()[i];
@@ -77,12 +77,11 @@ pub fn add_round_key(state: &mut [[u8; NB]; NB], round_key: &[u32; NB]) {
 
 pub fn shift_rows(state: &mut [[u8; NB]; NB]) {
     for i in 1..NB {
-        state[i].rotate_right(i);
+        state[i].rotate_left(i);
     }
 }
 
 pub fn mix_columns(state: &mut [[u8; NB]; NB]) {
-    let mut temp = [0u8; NB];
     for i in 0..NB {
         let s0 = state[0][i];
         let s1 = state[1][i];
@@ -114,7 +113,7 @@ pub fn multiply_galois(a: u8, b: u8) -> u8 {
     p
 }
 
-pub fn load_state(block: [u8; 16]) -> [[u8; NB]; NB] {
+pub fn load_state(block: &[u8; 16]) -> [[u8; NB]; NB] {
     let mut state = [[0u8; 4]; 4];
 
     for i in 0..NB {
@@ -124,4 +123,30 @@ pub fn load_state(block: [u8; 16]) -> [[u8; NB]; NB] {
     }
 
     state
+}
+
+pub fn cipher(block: &[u8; 16], w: &[u32; 44]) -> [[u8; NB]; NB] {
+    let mut state = load_state(block);
+    add_round_key(&mut state, &w[0..4]);
+
+    for round in 1..NR {
+        sub_bytes(&mut state);
+        shift_rows(&mut state);
+        mix_columns(&mut state);
+        add_round_key(&mut state, &w[(4 * round)..(4 * round + 4)]);
+    }
+
+    sub_bytes(&mut state);
+    shift_rows(&mut state);
+    add_round_key(&mut state, &w[w.len() - 4..]);
+
+    state
+}
+
+pub fn sub_bytes(state: &mut [[u8; NB]; NB]) {
+    for i in 0..NB {
+        for j in 0..NB {
+            state[i][j] = get_sub(state[i][j]);
+        }
+    }
 }

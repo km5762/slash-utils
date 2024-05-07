@@ -1,6 +1,8 @@
 #[cfg(test)]
 use crate::cryptography::aes;
 
+use super::key_expansion;
+
 #[test]
 fn rot_word() {
     assert_eq!(0xcf4f3c09, aes::rot_word(0x09cf4f3c));
@@ -76,7 +78,7 @@ fn double_galois() {
 
 #[test]
 fn triple_galois() {
-    assert_eq!(0xa2, aes::multiply_galois(0x95, 0x3));
+    assert_eq!(0xa4, aes::multiply_galois(0x95, 0x3));
 }
 
 #[test]
@@ -95,4 +97,20 @@ fn mix_columns() {
         [0xc2, 0xca, 0x54, 0x59],
     ];
     assert_eq!(state_expected, state);
+}
+
+#[test]
+fn cipher() {
+    let block = [
+        0x6B, 0xC1, 0xBE, 0xE2, 0x2E, 0x40, 0x9F, 0x96, 0xE9, 0x3D, 0x7E, 0x11, 0x73, 0x93, 0x17,
+        0x2A,
+    ];
+    let key = [0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C];
+    let w = key_expansion(&key);
+    let cipher_text = aes::cipher(&block, &w);
+    let cipher_text_expected = aes::load_state(&[
+        0x3A, 0xD7, 0x7B, 0xB4, 0x0D, 0x7A, 0x36, 0x60, 0xA8, 0x9E, 0xCA, 0xF3, 0x24, 0x66, 0xEF,
+        0x97,
+    ]);
+    assert_eq!(cipher_text_expected, cipher_text)
 }
