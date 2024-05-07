@@ -84,37 +84,44 @@ pub fn shift_rows(state: &mut [[u8; NB]; NB]) {
 pub fn mix_columns(state: &mut [[u8; NB]; NB]) {
     let mut temp = [0u8; NB];
     for i in 0..NB {
-        // temp[0] = state[0][i];
-        // state[0][i] = temp[1] = state[1][i];
-        // temp[2] = state[2][i];
-        // temp[3] = state[3][i];
+        let s0 = state[0][i];
+        let s1 = state[1][i];
+        let s2 = state[2][i];
+        let s3 = state[3][i];
+
+        state[0][i] = multiply_galois(s0, 0x02) ^ multiply_galois(s1, 0x03) ^ s2 ^ s3;
+        state[1][i] = s0 ^ multiply_galois(s1, 0x02) ^ multiply_galois(s2, 0x03) ^ s3;
+        state[2][i] = s0 ^ s1 ^ multiply_galois(s2, 0x02) ^ multiply_galois(s3, 0x03);
+        state[3][i] = multiply_galois(s0, 0x03) ^ s1 ^ s2 ^ multiply_galois(s3, 0x02);
     }
 }
 
 pub fn multiply_galois(a: u8, b: u8) -> u8 {
-    let mut result = a;
-    let mut last = a;
-    let mut n = 0;
-    for i in 0..8 {
-        if ((b >> i) & 1) == 1 {
-            for _ in 0..n {
-                last = x_times(last);
-            }
-            if (i > 0) {
-                result ^= last;
-            }
-            n = 1;
-        } else {
-            n += 1;
+    let mut a_temp = a;
+    let mut b_temp = b;
+    let mut p = 0;
+    for _ in 0..8 {
+        if ((b_temp) & 1) == 1 {
+            p ^= a_temp;
         }
+        let carry = (a_temp & 0x80) != 0;
+        a_temp <<= 1;
+        if carry {
+            a_temp ^= 0x1b;
+        }
+        b_temp >>= 1;
     }
-    result
+    p
 }
 
-pub fn x_times(b: u8) -> u8 {
-    if ((b >> 7) & 1) == 1 {
-        (b << 1) ^ 0x1b
-    } else {
-        b << 1
+pub fn load_state(block: [u8; 16]) -> [[u8; NB]; NB] {
+    let mut state = [[0u8; 4]; 4];
+
+    for i in 0..NB {
+        for j in 0..NB {
+            state[i][j] = block[j * 4 + i];
+        }
     }
+
+    state
 }
