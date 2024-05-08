@@ -1,5 +1,22 @@
 mod tests;
 
+#[derive(Default)]
+pub struct IntermediateValues {
+    initial_add_round_key: [[u8; NB]; NB],
+    rounds: [Round; NR - 1],
+    sub_bytes: [[u8; NB]; NB],
+    shift_rows: [[u8; NB]; NB],
+    final_add_round_key: [[u8; NB]; NB],
+}
+
+#[derive(Default)]
+pub struct Round {
+    sub_bytes: [[u8; NB]; NB],
+    shift_rows: [[u8; NB]; NB],
+    mix_columns: [[u8; NB]; NB],
+    add_round_key: [[u8; NB]; NB],
+}
+
 const NB: usize = 4;
 const NK: usize = 4;
 const NR: usize = NK + 6;
@@ -151,22 +168,31 @@ pub fn load_state(block: &[u8; 16]) -> [[u8; NB]; NB] {
     state
 }
 
-pub fn cipher(block: &[u8; 16], w: &[u32; NB * (NR + 1)]) -> [[u8; NB]; NB] {
+pub fn cipher(block: &[u8; 16], w: &[u32; NB * (NR + 1)]) -> IntermediateValues {
+    let mut intermediate_values = IntermediateValues::default();
     let mut state = load_state(block);
     add_round_key(&mut state, &w[0..4]);
+    intermediate_values.initial_add_round_key = state;
 
     for round in 1..NR {
         sub_bytes(&mut state);
+        intermediate_values.rounds[round - 1].sub_bytes = state;
         shift_rows(&mut state);
+        intermediate_values.rounds[round - 1].shift_rows = state;
         mix_columns(&mut state);
+        intermediate_values.rounds[round - 1].mix_columns = state;
         add_round_key(&mut state, &w[(4 * round)..(4 * round + 4)]);
+        intermediate_values.rounds[round - 1].add_round_key = state;
     }
 
     sub_bytes(&mut state);
+    intermediate_values.sub_bytes = state;
     shift_rows(&mut state);
+    intermediate_values.shift_rows = state;
     add_round_key(&mut state, &w[w.len() - 4..]);
+    intermediate_values.final_add_round_key = state;
 
-    state
+    intermediate_values
 }
 
 pub fn sub_bytes(state: &mut [[u8; NB]; NB]) {

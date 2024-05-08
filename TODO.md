@@ -4,12 +4,6 @@ Project Description
 
 ### TASKS
 
-- [ ] AES key schedule
-- [ ] AES cipher function
-  - shift_rows()
-  - add_round_key()
-  - mix_columns()
-
 ### COMPLETED ✓
 
 - [x] AES key schedule
@@ -21,3 +15,6 @@ Project Description
   - [x] inverse_shift_rows()
   - [x] inverse_sub_bytes()
   - [x] inverse_mix_columns()
+- [ ] Return intermediate values from cipher functions
+  - [x] In cipher()
+  - [ ] In inv_cipher()

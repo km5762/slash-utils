@@ -107,12 +107,15 @@ fn cipher() {
     ];
     let key = [0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C];
     let w = key_expansion(&key);
-    let cipher_text = aes::cipher(&block, &w);
+    let intermediate_values = aes::cipher(&block, &w);
     let cipher_text_expected = aes::load_state(&[
         0x3A, 0xD7, 0x7B, 0xB4, 0x0D, 0x7A, 0x36, 0x60, 0xA8, 0x9E, 0xCA, 0xF3, 0x24, 0x66, 0xEF,
         0x97,
     ]);
-    assert_eq!(cipher_text_expected, cipher_text)
+    assert_eq!(
+        cipher_text_expected,
+        intermediate_values.final_add_round_key
+    );
 }
 
 #[test]
