@@ -151,7 +151,7 @@ pub fn load_state(block: &[u8; 16]) -> [[u8; NB]; NB] {
     state
 }
 
-pub fn cipher(block: &[u8; 16], w: &[u32; 44]) -> [[u8; NB]; NB] {
+pub fn cipher(block: &[u8; 16], w: &[u32; NB * (NR + 1)]) -> [[u8; NB]; NB] {
     let mut state = load_state(block);
     add_round_key(&mut state, &w[0..4]);
 
@@ -217,7 +217,7 @@ pub fn inv_mix_columns(state: &mut [[u8; NB]; NB]) {
     }
 }
 
-pub fn inv_cipher(encrypted_block: &[u8; 16], w: &[u32; 44]) -> [[u8; NB]; NB] {
+pub fn inv_cipher(encrypted_block: &[u8; 16], w: &[u32; NB * (NR + 1)]) -> [[u8; NB]; NB] {
     let mut state = load_state(encrypted_block);
     add_round_key(&mut state, &w[w.len() - 4..]);
 
