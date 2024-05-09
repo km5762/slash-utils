@@ -171,10 +171,10 @@ fn inv_cipher() {
     ];
     let key = [0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C];
     let w = aes::key_expansion(&key);
-    let block = aes::inv_cipher(&block, &w);
+    let intermediate_values = aes::inv_cipher(&block, &w);
     let block_expected = [
         0x6B, 0xC1, 0xBE, 0xE2, 0x2E, 0x40, 0x9F, 0x96, 0xE9, 0x3D, 0x7E, 0x11, 0x73, 0x93, 0x17,
         0x2A,
     ];
-    assert_eq!(block_expected, block);
+    assert_eq!(block_expected, *intermediate_values.final_add_round_key);
 }

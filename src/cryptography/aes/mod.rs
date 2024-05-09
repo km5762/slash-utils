@@ -272,20 +272,38 @@ pub fn inv_mix_columns(state: &mut [u8; NB * NB]) {
     }
 }
 
-pub fn inv_cipher(encrypted_block: &[u8], w: &[u32; NB * (NR + 1)]) -> [u8; NB * NB] {
+pub fn inv_cipher(encrypted_block: &[u8], w: &[u32; NB * (NR + 1)]) -> IntermediateValues {
+    console_error_panic_hook::set_once();
+    let mut intermediate_values = IntermediateValues::default();
     let mut state: [u8; 16] = encrypted_block.try_into().expect("ERROR");
     add_round_key(&mut state, &w[w.len() - 4..]);
+    intermediate_values.initial_add_round_key = Box::new(state);
+    let mut rounds: Vec<Round> = vec![];
 
     for round in (1..NR).rev() {
         inv_shift_rows(&mut state);
+        let shift_rows = Box::new(state);
         inv_sub_bytes(&mut state);
+        let sub_bytes = Box::new(state);
         add_round_key(&mut state, &w[(4 * round)..(4 * round + 4)]);
+        let add_round_key = Box::new(state);
         inv_mix_columns(&mut state);
+        let mix_columns = Box::new(state);
+        intermediate_values.initial_add_round_key = Box::new(state);
+        rounds.push(Round {
+            sub_bytes,
+            shift_rows,
+            mix_columns,
+            add_round_key,
+        });
     }
 
     inv_shift_rows(&mut state);
+    intermediate_values.shift_rows = Box::new(state);
     inv_sub_bytes(&mut state);
+    intermediate_values.sub_bytes = Box::new(state);
     add_round_key(&mut state, &w[0..4]);
+    intermediate_values.final_add_round_key = Box::new(state);
 
-    state
+    intermediate_values
 }

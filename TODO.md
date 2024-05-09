@@ -15,8 +15,8 @@ Project Description
   - [x] inverse_shift_rows()
   - [x] inverse_sub_bytes()
   - [x] inverse_mix_columns()
-- [ ] Return intermediate values from cipher functions
+- [x] Return intermediate values from cipher functions
   - [x] In cipher()
-  - [ ] In inv_cipher()
+  - [x] In inv_cipher()
 - [x] WASM Compatibility
   - [x] Convert all state to 1d array instead of 2d
