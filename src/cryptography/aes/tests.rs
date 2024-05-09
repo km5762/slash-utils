@@ -1,8 +1,6 @@
 #[cfg(test)]
 use crate::cryptography::aes;
 
-use super::key_expansion;
-
 #[test]
 fn rot_word() {
     assert_eq!(0xcf4f3c09, aes::rot_word(0x09cf4f3c));
@@ -106,7 +104,7 @@ fn cipher() {
         0x2A,
     ];
     let key = [0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C];
-    let w = key_expansion(&key);
+    let w = aes::key_expansion(&key);
     let intermediate_values = aes::cipher(&block, &w);
     let cipher_text_expected = aes::load_state(&[
         0x3A, 0xD7, 0x7B, 0xB4, 0x0D, 0x7A, 0x36, 0x60, 0xA8, 0x9E, 0xCA, 0xF3, 0x24, 0x66, 0xEF,
@@ -114,7 +112,7 @@ fn cipher() {
     ]);
     assert_eq!(
         cipher_text_expected,
-        intermediate_values.final_add_round_key
+        aes::load_state(&intermediate_values.final_add_round_key)
     );
 }
 
@@ -182,7 +180,7 @@ fn inv_cipher() {
         0x97,
     ];
     let key = [0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C];
-    let w = key_expansion(&key);
+    let w = aes::key_expansion(&key);
     let block = aes::inv_cipher(&block, &w);
     let block_expected = aes::load_state(&[
         0x6B, 0xC1, 0xBE, 0xE2, 0x2E, 0x40, 0x9F, 0x96, 0xE9, 0x3D, 0x7E, 0x11, 0x73, 0x93, 0x17,

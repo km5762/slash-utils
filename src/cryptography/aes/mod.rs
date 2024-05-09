@@ -1,20 +1,26 @@
 mod tests;
+extern crate console_error_panic_hook;
+extern crate wasm_bindgen;
 
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen(getter_with_clone)]
 #[derive(Default)]
 pub struct IntermediateValues {
-    initial_add_round_key: [[u8; NB]; NB],
-    rounds: [Round; NR - 1],
-    sub_bytes: [[u8; NB]; NB],
-    shift_rows: [[u8; NB]; NB],
-    final_add_round_key: [[u8; NB]; NB],
+    pub initial_add_round_key: Box<[u8]>,
+    pub rounds: Box<[Round]>,
+    pub sub_bytes: Box<[u8]>,
+    pub shift_rows: Box<[u8]>,
+    pub final_add_round_key: Box<[u8]>,
 }
 
-#[derive(Default)]
+#[wasm_bindgen(getter_with_clone)]
+#[derive(Default, Clone)]
 pub struct Round {
-    sub_bytes: [[u8; NB]; NB],
-    shift_rows: [[u8; NB]; NB],
-    mix_columns: [[u8; NB]; NB],
-    add_round_key: [[u8; NB]; NB],
+    pub sub_bytes: Box<[u8]>,
+    pub shift_rows: Box<[u8]>,
+    pub mix_columns: Box<[u8]>,
+    pub add_round_key: Box<[u8]>,
 }
 
 const NB: usize = 4;
@@ -156,41 +162,49 @@ pub fn multiply_galois(a: u8, b: u8) -> u8 {
     p
 }
 
-pub fn load_state(block: &[u8; 16]) -> [[u8; NB]; NB] {
-    let mut state = [[0u8; 4]; 4];
+pub fn load_state(block: &[u8]) -> [[u8; NB]; NB] {
+    let mut state = [[0u8; NB]; NB];
 
     for i in 0..NB {
         for j in 0..NB {
-            state[i][j] = block[j * 4 + i];
+            state[i][j] = block[j * NB + i];
         }
     }
 
     state
 }
 
-pub fn cipher(block: &[u8; 16], w: &[u32; NB * (NR + 1)]) -> IntermediateValues {
+#[wasm_bindgen]
+pub fn cipher(block: &[u8], w: &[u32]) -> IntermediateValues {
+    console_error_panic_hook::set_once();
     let mut intermediate_values = IntermediateValues::default();
     let mut state = load_state(block);
     add_round_key(&mut state, &w[0..4]);
-    intermediate_values.initial_add_round_key = state;
-
+    intermediate_values.initial_add_round_key = Box::new(unload_state(&state));
+    let mut rounds: Vec<Round> = vec![];
     for round in 1..NR {
         sub_bytes(&mut state);
-        intermediate_values.rounds[round - 1].sub_bytes = state;
+        let sub_bytes = Box::new(unload_state(&state));
         shift_rows(&mut state);
-        intermediate_values.rounds[round - 1].shift_rows = state;
+        let shift_rows = Box::new(unload_state(&state));
         mix_columns(&mut state);
-        intermediate_values.rounds[round - 1].mix_columns = state;
+        let mix_columns = Box::new(unload_state(&state));
         add_round_key(&mut state, &w[(4 * round)..(4 * round + 4)]);
-        intermediate_values.rounds[round - 1].add_round_key = state;
+        let add_round_key = Box::new(unload_state(&state));
+        rounds.push(Round {
+            sub_bytes,
+            shift_rows,
+            mix_columns,
+            add_round_key,
+        });
     }
 
     sub_bytes(&mut state);
-    intermediate_values.sub_bytes = state;
+    intermediate_values.sub_bytes = Box::new(unload_state(&state));
     shift_rows(&mut state);
-    intermediate_values.shift_rows = state;
+    intermediate_values.shift_rows = Box::new(unload_state(&state));
     add_round_key(&mut state, &w[w.len() - 4..]);
-    intermediate_values.final_add_round_key = state;
+    intermediate_values.final_add_round_key = Box::new(unload_state(&state));
 
     intermediate_values
 }
@@ -259,4 +273,16 @@ pub fn inv_cipher(encrypted_block: &[u8; 16], w: &[u32; NB * (NR + 1)]) -> [[u8;
     add_round_key(&mut state, &w[0..4]);
 
     state
+}
+
+pub fn unload_state(state: &[[u8; NB]; NB]) -> [u8; NB * NB] {
+    let mut block = [0u8; NB * NB];
+
+    for i in 0..NB {
+        for j in 0..NB {
+            block[j * NB + i] = state[i][j];
+        }
+    }
+
+    block
 }
