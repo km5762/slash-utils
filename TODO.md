@@ -4,9 +4,6 @@ Project Description
 
 ### TASKS
 
-- [x] WASM Compatibility
-  - [ ] Convert all state to 1d array instead of 2d
-
 ### COMPLETED ✓
 
 - [x] AES key schedule
@@ -21,3 +18,5 @@ Project Description
 - [ ] Return intermediate values from cipher functions
   - [x] In cipher()
   - [ ] In inv_cipher()
+- [x] WASM Compatibility
+  - [x] Convert all state to 1d array instead of 2d

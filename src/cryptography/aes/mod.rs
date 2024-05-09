@@ -116,31 +116,47 @@ pub fn key_expansion(key: &[u32; NK]) -> [u32; NB * (NR + 1)] {
     w
 }
 
-pub fn add_round_key(state: &mut [[u8; NB]; NB], round_key: &[u32]) {
-    for i in 0..NB {
+pub fn add_round_key(state: &mut [u8; NB * NB], round_key: &[u32]) {
+    for i in 0..round_key.len() {
+        let bytes = round_key[i].to_be_bytes();
         for j in 0..NB {
-            state[i][j] ^= round_key[j].to_be_bytes()[i];
+            state[i * NB + j] ^= bytes[j];
         }
     }
 }
 
-pub fn shift_rows(state: &mut [[u8; NB]; NB]) {
-    for i in 1..NB {
-        state[i].rotate_left(i);
-    }
+pub fn shift_rows(state: &mut [u8; NB * NB]) {
+    let temp = state[1];
+    state[1] = state[5];
+    state[5] = state[9];
+    state[9] = state[13];
+    state[13] = temp;
+
+    let temp = state[2];
+    state[2] = state[10];
+    state[10] = temp;
+    let temp = state[6];
+    state[6] = state[14];
+    state[14] = temp;
+
+    let temp = state[15];
+    state[15] = state[11];
+    state[11] = state[7];
+    state[7] = state[3];
+    state[3] = temp;
 }
 
-pub fn mix_columns(state: &mut [[u8; NB]; NB]) {
+pub fn mix_columns(state: &mut [u8; NB * NB]) {
     for i in 0..NB {
-        let s0 = state[0][i];
-        let s1 = state[1][i];
-        let s2 = state[2][i];
-        let s3 = state[3][i];
+        let s0 = state[i * NB];
+        let s1 = state[i * NB + 1];
+        let s2 = state[i * NB + 2];
+        let s3 = state[i * NB + 3];
 
-        state[0][i] = multiply_galois(s0, 0x02) ^ multiply_galois(s1, 0x03) ^ s2 ^ s3;
-        state[1][i] = s0 ^ multiply_galois(s1, 0x02) ^ multiply_galois(s2, 0x03) ^ s3;
-        state[2][i] = s0 ^ s1 ^ multiply_galois(s2, 0x02) ^ multiply_galois(s3, 0x03);
-        state[3][i] = multiply_galois(s0, 0x03) ^ s1 ^ s2 ^ multiply_galois(s3, 0x02);
+        state[i * NB] = multiply_galois(s0, 0x02) ^ multiply_galois(s1, 0x03) ^ s2 ^ s3;
+        state[i * NB + 1] = s0 ^ multiply_galois(s1, 0x02) ^ multiply_galois(s2, 0x03) ^ s3;
+        state[i * NB + 2] = s0 ^ s1 ^ multiply_galois(s2, 0x02) ^ multiply_galois(s3, 0x03);
+        state[i * NB + 3] = multiply_galois(s0, 0x03) ^ s1 ^ s2 ^ multiply_galois(s3, 0x02);
     }
 }
 
@@ -162,35 +178,23 @@ pub fn multiply_galois(a: u8, b: u8) -> u8 {
     p
 }
 
-pub fn load_state(block: &[u8]) -> [[u8; NB]; NB] {
-    let mut state = [[0u8; NB]; NB];
-
-    for i in 0..NB {
-        for j in 0..NB {
-            state[i][j] = block[j * NB + i];
-        }
-    }
-
-    state
-}
-
 #[wasm_bindgen]
 pub fn cipher(block: &[u8], w: &[u32]) -> IntermediateValues {
     console_error_panic_hook::set_once();
     let mut intermediate_values = IntermediateValues::default();
-    let mut state = load_state(block);
+    let mut state: [u8; 16] = block.try_into().expect("ERROR");
     add_round_key(&mut state, &w[0..4]);
-    intermediate_values.initial_add_round_key = Box::new(unload_state(&state));
+    intermediate_values.initial_add_round_key = Box::new(state);
     let mut rounds: Vec<Round> = vec![];
     for round in 1..NR {
         sub_bytes(&mut state);
-        let sub_bytes = Box::new(unload_state(&state));
+        let sub_bytes = Box::new(state);
         shift_rows(&mut state);
-        let shift_rows = Box::new(unload_state(&state));
+        let shift_rows = Box::new(state);
         mix_columns(&mut state);
-        let mix_columns = Box::new(unload_state(&state));
+        let mix_columns = Box::new(state);
         add_round_key(&mut state, &w[(4 * round)..(4 * round + 4)]);
-        let add_round_key = Box::new(unload_state(&state));
+        let add_round_key = Box::new(state);
         rounds.push(Round {
             sub_bytes,
             shift_rows,
@@ -200,65 +204,76 @@ pub fn cipher(block: &[u8], w: &[u32]) -> IntermediateValues {
     }
 
     sub_bytes(&mut state);
-    intermediate_values.sub_bytes = Box::new(unload_state(&state));
+    intermediate_values.sub_bytes = Box::new(state);
     shift_rows(&mut state);
-    intermediate_values.shift_rows = Box::new(unload_state(&state));
+    intermediate_values.shift_rows = Box::new(state);
     add_round_key(&mut state, &w[w.len() - 4..]);
-    intermediate_values.final_add_round_key = Box::new(unload_state(&state));
+    intermediate_values.final_add_round_key = Box::new(state);
 
     intermediate_values
 }
 
-pub fn sub_bytes(state: &mut [[u8; NB]; NB]) {
-    for i in 0..NB {
-        for j in 0..NB {
-            state[i][j] = get_sub(state[i][j]);
-        }
+pub fn sub_bytes(state: &mut [u8; NB * NB]) {
+    for i in 0..NB * NB {
+        state[i] = get_sub(state[i]);
     }
 }
 
-pub fn inv_shift_rows(state: &mut [[u8; NB]; NB]) {
-    for i in 1..NB {
-        state[i].rotate_right(i);
+pub fn inv_shift_rows(state: &mut [u8; NB * NB]) {
+    let temp = state[13];
+    state[13] = state[9];
+    state[9] = state[5];
+    state[5] = state[1];
+    state[1] = temp;
+
+    let temp = state[2];
+    state[2] = state[10];
+    state[10] = temp;
+    let temp = state[6];
+    state[6] = state[14];
+    state[14] = temp;
+
+    let temp = state[3];
+    state[3] = state[7];
+    state[7] = state[11];
+    state[11] = state[15];
+    state[15] = temp;
+}
+
+pub fn inv_sub_bytes(state: &mut [u8; NB * NB]) {
+    for i in 0..NB * NB {
+        state[i] = get_inv_sub(state[i]);
     }
 }
 
-pub fn inv_sub_bytes(state: &mut [[u8; NB]; NB]) {
+pub fn inv_mix_columns(state: &mut [u8; NB * NB]) {
     for i in 0..NB {
-        for j in 0..NB {
-            state[i][j] = get_inv_sub(state[i][j]);
-        }
-    }
-}
+        let s0 = state[i * NB];
+        let s1 = state[i * NB + 1];
+        let s2 = state[i * NB + 2];
+        let s3 = state[i * NB + 3];
 
-pub fn inv_mix_columns(state: &mut [[u8; NB]; NB]) {
-    for i in 0..NB {
-        let s0 = state[0][i];
-        let s1 = state[1][i];
-        let s2 = state[2][i];
-        let s3 = state[3][i];
-
-        state[0][i] = multiply_galois(s0, 0x0e)
+        state[i * NB] = multiply_galois(s0, 0x0e)
             ^ multiply_galois(s1, 0x0b)
             ^ multiply_galois(s2, 0x0d)
             ^ multiply_galois(s3, 0x09);
-        state[1][i] = multiply_galois(s0, 0x09)
+        state[i * NB + 1] = multiply_galois(s0, 0x09)
             ^ multiply_galois(s1, 0x0e)
             ^ multiply_galois(s2, 0x0b)
             ^ multiply_galois(s3, 0x0d);
-        state[2][i] = multiply_galois(s0, 0x0d)
+        state[i * NB + 2] = multiply_galois(s0, 0x0d)
             ^ multiply_galois(s1, 0x09)
             ^ multiply_galois(s2, 0x0e)
             ^ multiply_galois(s3, 0x0b);
-        state[3][i] = multiply_galois(s0, 0x0b)
+        state[i * NB + 3] = multiply_galois(s0, 0x0b)
             ^ multiply_galois(s1, 0x0d)
             ^ multiply_galois(s2, 0x09)
             ^ multiply_galois(s3, 0x0e);
     }
 }
 
-pub fn inv_cipher(encrypted_block: &[u8; 16], w: &[u32; NB * (NR + 1)]) -> [[u8; NB]; NB] {
-    let mut state = load_state(encrypted_block);
+pub fn inv_cipher(encrypted_block: &[u8], w: &[u32; NB * (NR + 1)]) -> [u8; NB * NB] {
+    let mut state: [u8; 16] = encrypted_block.try_into().expect("ERROR");
     add_round_key(&mut state, &w[w.len() - 4..]);
 
     for round in (1..NR).rev() {
@@ -273,16 +288,4 @@ pub fn inv_cipher(encrypted_block: &[u8; 16], w: &[u32; NB * (NR + 1)]) -> [[u8;
     add_round_key(&mut state, &w[0..4]);
 
     state
-}
-
-pub fn unload_state(state: &[[u8; NB]; NB]) -> [u8; NB * NB] {
-    let mut block = [0u8; NB * NB];
-
-    for i in 0..NB {
-        for j in 0..NB {
-            block[j * NB + i] = state[i][j];
-        }
-    }
-
-    block
 }
