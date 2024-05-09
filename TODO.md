@@ -4,6 +4,9 @@ Project Description
 
 ### TASKS
 
+- [x] WASM Compatibility
+  - [ ] Convert all state to 1d array instead of 2d
+
 ### COMPLETED ✓
 
 - [x] AES key schedule
