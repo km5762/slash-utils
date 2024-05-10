@@ -3,6 +3,7 @@
 Project Description
 
 ### TASKS
+- [] Support for arbitrary key sizes
 
 ### COMPLETED ✓
 
