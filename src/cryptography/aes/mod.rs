@@ -182,10 +182,11 @@ pub fn multiply_galois(a: u8, b: u8) -> u8 {
 pub fn cipher(block: &[u8], w: &[u32]) -> IntermediateValues {
     console_error_panic_hook::set_once();
     let mut intermediate_values = IntermediateValues::default();
-    let mut state: [u8; 16] = block.try_into().expect("ERROR");
+    let mut state: [u8; 16] = block.try_into().expect("Block size must be 16 bytes");
     add_round_key(&mut state, &w[0..4]);
     intermediate_values.initial_add_round_key = Box::new(state);
     let mut rounds: Vec<Round> = vec![];
+
     for round in 1..NR {
         sub_bytes(&mut state);
         let sub_bytes = Box::new(state);
@@ -203,6 +204,7 @@ pub fn cipher(block: &[u8], w: &[u32]) -> IntermediateValues {
         });
     }
 
+    intermediate_values.rounds = rounds.into_boxed_slice();
     sub_bytes(&mut state);
     intermediate_values.sub_bytes = Box::new(state);
     shift_rows(&mut state);
@@ -275,7 +277,9 @@ pub fn inv_mix_columns(state: &mut [u8; NB * NB]) {
 pub fn inv_cipher(encrypted_block: &[u8], w: &[u32; NB * (NR + 1)]) -> IntermediateValues {
     console_error_panic_hook::set_once();
     let mut intermediate_values = IntermediateValues::default();
-    let mut state: [u8; 16] = encrypted_block.try_into().expect("ERROR");
+    let mut state: [u8; 16] = encrypted_block
+        .try_into()
+        .expect("Block size must be 16 bytes");
     add_round_key(&mut state, &w[w.len() - 4..]);
     intermediate_values.initial_add_round_key = Box::new(state);
     let mut rounds: Vec<Round> = vec![];
