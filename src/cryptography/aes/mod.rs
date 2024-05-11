@@ -94,7 +94,7 @@ fn get_inv_sub(byte: u8) -> u8 {
     INVSBOX[upper_nibble * 16 + lower_nibble]
 }
 
-pub fn key_expansion(key: &[u32]) -> Box<[u32]> {
+fn key_expansion(key: &[u32]) -> Box<[u32]> {
     let nk: usize = key.len();
     let nr = nk + 6;
     let mut w = vec![0u32; NB * (nr + 1)];
@@ -178,7 +178,7 @@ fn galois_multiply(a: u8, b: u8) -> u8 {
     p
 }
 
-pub fn cipher(block: &[u8; 16], w: &[u32]) -> IntermediateValues {
+fn cipher(block: &[u8; 16], w: &[u32]) -> IntermediateValues {
     let mut intermediate_values = IntermediateValues::default();
     let mut state = block.clone();
     add_round_key(&mut state, &w[0..4]);
@@ -312,11 +312,13 @@ fn inv_cipher(block: &[u8; 16], w: &[u32]) -> IntermediateValues {
     intermediate_values
 }
 
+#[wasm_bindgen]
 pub fn encrypt(block: &[u8], key: &[u32]) -> IntermediateValues {
     let w = key_expansion(&key);
     cipher(block.try_into().expect("Block must be 16 byte array"), &w)
 }
 
+#[wasm_bindgen]
 pub fn decrypt(block: &[u8], key: &[u32]) -> IntermediateValues {
     let w = key_expansion(&key);
     inv_cipher(block.try_into().expect("Block must be 16 byte array"), &w)
