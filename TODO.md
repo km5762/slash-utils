@@ -3,7 +3,6 @@
 Project Description
 
 ### TASKS
-- [] Support for arbitrary key sizes
 
 ### COMPLETED ✓
 
@@ -21,3 +20,4 @@ Project Description
   - [x] In inv_cipher()
 - [x] WASM Compatibility
   - [x] Convert all state to 1d array instead of 2d
+- [x] Support for arbitrary key sizes

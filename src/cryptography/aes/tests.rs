@@ -24,7 +24,7 @@ fn expand_128_key() {
         0x7f8d292f, 0xac7766f3, 0x19fadc21, 0x28d12941, 0x575c006e, 0xd014f9a8, 0xc9ee2589,
         0xe13f0cc8, 0xb6630ca6,
     ];
-    assert_eq!(w_expected, w);
+    assert_eq!(w_expected, *w);
 }
 
 #[test]
@@ -58,17 +58,17 @@ fn shift_rows() {
 
 #[test]
 fn multiply_galois() {
-    assert_eq!(0xfe, aes::multiply_galois(0x57, 0x13));
+    assert_eq!(0xfe, aes::galois_multiply(0x57, 0x13));
 }
 
 #[test]
 fn double_galois() {
-    assert_eq!(0x15, aes::multiply_galois(0x87, 0x2));
+    assert_eq!(0x15, aes::galois_multiply(0x87, 0x2));
 }
 
 #[test]
 fn triple_galois() {
-    assert_eq!(0xa4, aes::multiply_galois(0x95, 0x3));
+    assert_eq!(0xa4, aes::galois_multiply(0x95, 0x3));
 }
 
 #[test]
@@ -177,4 +177,35 @@ fn inv_cipher() {
         0x2A,
     ];
     assert_eq!(block_expected, *intermediate_values.final_add_round_key);
+}
+
+#[test]
+fn correctness_192() {
+    let block = [
+        0x6B, 0xC1, 0xBE, 0xE2, 0x2E, 0x40, 0x9F, 0x96, 0xE9, 0x3D, 0x7E, 0x11, 0x73, 0x93, 0x17,
+        0x2A,
+    ];
+    let key = [
+        0x8E73B0F7, 0xDA0E6452, 0xC810F32B, 0x809079E5, 0x62F8EAD2, 0x522C6B7B,
+    ];
+    assert_eq!(
+        block,
+        *aes::decrypt(&aes::encrypt(&block, &key).final_add_round_key, &key).final_add_round_key
+    );
+}
+
+#[test]
+fn correctness_256() {
+    let block = [
+        0x6B, 0xC1, 0xBE, 0xE2, 0x2E, 0x40, 0x9F, 0x96, 0xE9, 0x3D, 0x7E, 0x11, 0x73, 0x93, 0x17,
+        0x2A,
+    ];
+    let key = [
+        0x603DEB10, 0x15CA71BE, 0x2B73AEF0, 0x857D7781, 0x1F352C07, 0x3B6108D7, 0x2D9810A3,
+        0x0914DFF4,
+    ];
+    assert_eq!(
+        block,
+        *aes::decrypt(&aes::encrypt(&block, &key).final_add_round_key, &key).final_add_round_key
+    );
 }
