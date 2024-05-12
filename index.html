@@ -1,25 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vite App</title>
   </head>
   <body>
-    <script type="module">
-      import init, { encrypt, IntermediateValues } from "./pkg/slash_utils.js";
-      init().then(() => {
-        const block = new Uint8Array([
-          0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e,
-          0x11, 0x73, 0x93, 0x17, 0x2a,
-        ]);
-        const key = new Uint32Array([
-          0x603deb10, 0x15ca71be, 0x2b73aef0, 0x857d7781, 0x1f352c07,
-          0x3b6108d7, 0x2d9810a3, 0x0914dff4,
-        ]);
-        const intermediate_values = encrypt(block, key);
-        console.log(intermediate_values);
-      });
-    </script>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
