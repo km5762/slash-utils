@@ -1,7 +1,4 @@
 {
-  "recommendations": [
-    "Vue.volar",
-    "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode"
-  ]
+  "recommendations": ["astro-build.astro-vscode"],
+  "unwantedRecommendations": []
 }
