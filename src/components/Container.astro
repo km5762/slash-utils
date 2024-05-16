@@ -1,0 +1,13 @@
+---
+const { class: className, ...rest } = Astro.props;
+---
+
+<div
+  class:list={[
+    "bg-slate-800 border rounded-xl p-4 border-slate-700",
+    className,
+  ]}
+  {...rest}
+>
+  <slot />
+</div>

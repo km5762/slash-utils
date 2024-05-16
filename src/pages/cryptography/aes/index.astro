@@ -1,0 +1,16 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Container from "../../../components/Container.astro";
+import InputsForm from "./InputsForm.vue";
+import IntermediateValuesTable from "./IntermediateValuesTable.vue";
+---
+
+<Layout title="/Cryptography/AES">
+  <main class="px-32">
+    <h1 class="text-7xl font-bold pb-2 text-center">/AES</h1>
+    <Container class="flex p-8">
+      <InputsForm client:load />
+      <IntermediateValuesTable client:only="vue" />
+    </Container>
+  </main>
+</Layout>

@@ -7,20 +7,20 @@ use wasm_bindgen::prelude::*;
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Default)]
 pub struct IntermediateValues {
-    pub initial_add_round_key: Box<[u8]>,
+    pub initial_add_round_key: String,
     pub rounds: Box<[Round]>,
-    pub sub_bytes: Box<[u8]>,
-    pub shift_rows: Box<[u8]>,
-    pub final_add_round_key: Box<[u8]>,
+    pub sub_bytes: String,
+    pub shift_rows: String,
+    pub final_add_round_key: String,
 }
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Default, Clone)]
 pub struct Round {
-    pub sub_bytes: Box<[u8]>,
-    pub shift_rows: Box<[u8]>,
-    pub mix_columns: Box<[u8]>,
-    pub add_round_key: Box<[u8]>,
+    pub sub_bytes: String,
+    pub shift_rows: String,
+    pub mix_columns: String,
+    pub add_round_key: String,
 }
 
 const NB: usize = 4;
@@ -182,19 +182,19 @@ fn cipher(block: &[u8; 16], w: &[u32]) -> IntermediateValues {
     let mut intermediate_values = IntermediateValues::default();
     let mut state = block.clone();
     add_round_key(&mut state, &w[0..4]);
-    intermediate_values.initial_add_round_key = Box::new(state.clone());
+    intermediate_values.initial_add_round_key = u8_array_to_hex_string(&state);
     let nr = w.len() / 4 - 1;
 
     let rounds = (1..nr)
         .map(|round| {
             sub_bytes(&mut state);
-            let sub_bytes = Box::new(state.clone());
+            let sub_bytes = u8_array_to_hex_string(&state);
             shift_rows(&mut state);
-            let shift_rows = Box::new(state.clone());
+            let shift_rows = u8_array_to_hex_string(&state);
             mix_columns(&mut state);
-            let mix_columns = Box::new(state.clone());
+            let mix_columns = u8_array_to_hex_string(&state);
             add_round_key(&mut state, &w[(4 * round)..(4 * round + 4)]);
-            let add_round_key = Box::new(state.clone());
+            let add_round_key = u8_array_to_hex_string(&state);
             Round {
                 sub_bytes,
                 shift_rows,
@@ -206,11 +206,11 @@ fn cipher(block: &[u8; 16], w: &[u32]) -> IntermediateValues {
 
     intermediate_values.rounds = rounds.into_boxed_slice();
     sub_bytes(&mut state);
-    intermediate_values.sub_bytes = Box::new(state.clone());
+    intermediate_values.sub_bytes = u8_array_to_hex_string(&state);
     shift_rows(&mut state);
-    intermediate_values.shift_rows = Box::new(state.clone());
+    intermediate_values.shift_rows = u8_array_to_hex_string(&state);
     add_round_key(&mut state, &w[w.len() - 4..]);
-    intermediate_values.final_add_round_key = Box::new(state.clone());
+    intermediate_values.final_add_round_key = u8_array_to_hex_string(&state);
 
     intermediate_values
 }
@@ -278,20 +278,20 @@ fn inv_cipher(block: &[u8; 16], w: &[u32]) -> IntermediateValues {
     let mut intermediate_values = IntermediateValues::default();
     let mut state = block.clone();
     add_round_key(&mut state, &w[w.len() - 4..]);
-    intermediate_values.initial_add_round_key = Box::new(state.clone());
+    intermediate_values.initial_add_round_key = u8_array_to_hex_string(&state);
     let nr = w.len() / 4 - 1;
 
     let rounds = (1..nr)
         .rev()
         .map(|round| {
             inv_shift_rows(&mut state);
-            let shift_rows = Box::new(state.clone());
+            let shift_rows = u8_array_to_hex_string(&state);
             inv_sub_bytes(&mut state);
-            let sub_bytes = Box::new(state.clone());
+            let sub_bytes = u8_array_to_hex_string(&state);
             add_round_key(&mut state, &w[(4 * round)..(4 * round + 4)]);
-            let add_round_key = Box::new(state.clone());
+            let add_round_key = u8_array_to_hex_string(&state);
             inv_mix_columns(&mut state);
-            let mix_columns = Box::new(state.clone());
+            let mix_columns = u8_array_to_hex_string(&state);
             Round {
                 sub_bytes,
                 shift_rows,
@@ -303,13 +303,18 @@ fn inv_cipher(block: &[u8; 16], w: &[u32]) -> IntermediateValues {
 
     intermediate_values.rounds = rounds.into_boxed_slice();
     inv_shift_rows(&mut state);
-    intermediate_values.shift_rows = Box::new(state.clone());
+    intermediate_values.shift_rows = u8_array_to_hex_string(&state);
     inv_sub_bytes(&mut state);
-    intermediate_values.sub_bytes = Box::new(state.clone());
+    intermediate_values.sub_bytes = u8_array_to_hex_string(&state);
     add_round_key(&mut state, &w[0..4]);
-    intermediate_values.final_add_round_key = Box::new(state.clone());
+    intermediate_values.final_add_round_key = u8_array_to_hex_string(&state);
 
     intermediate_values
+}
+
+fn u8_array_to_hex_string(data: &[u8]) -> String {
+    let hex_chars: Vec<String> = data.iter().map(|&byte| format!("{:02x}", byte)).collect();
+    hex_chars.join("")
 }
 
 #[wasm_bindgen]

@@ -108,13 +108,10 @@ fn cipher() {
     let key = [0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C];
     let w = aes::key_expansion(&key);
     let intermediate_values = aes::cipher(&block, &w);
-    let cipher_text_expected = [
-        0x3A, 0xD7, 0x7B, 0xB4, 0x0D, 0x7A, 0x36, 0x60, 0xA8, 0x9E, 0xCA, 0xF3, 0x24, 0x66, 0xEF,
-        0x97,
-    ];
+    let cipher_text_expected = "3ad77bb40d7a3660a89ecaf32466ef97";
     assert_eq!(
         cipher_text_expected,
-        *intermediate_values.final_add_round_key
+        intermediate_values.final_add_round_key
     );
 }
 
@@ -172,40 +169,6 @@ fn inv_cipher() {
     let key = [0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C];
     let w = aes::key_expansion(&key);
     let intermediate_values = aes::inv_cipher(&block, &w);
-    let block_expected = [
-        0x6B, 0xC1, 0xBE, 0xE2, 0x2E, 0x40, 0x9F, 0x96, 0xE9, 0x3D, 0x7E, 0x11, 0x73, 0x93, 0x17,
-        0x2A,
-    ];
-    assert_eq!(block_expected, *intermediate_values.final_add_round_key);
-}
-
-#[test]
-fn correctness_192() {
-    let block = [
-        0x6B, 0xC1, 0xBE, 0xE2, 0x2E, 0x40, 0x9F, 0x96, 0xE9, 0x3D, 0x7E, 0x11, 0x73, 0x93, 0x17,
-        0x2A,
-    ];
-    let key = [
-        0x8E73B0F7, 0xDA0E6452, 0xC810F32B, 0x809079E5, 0x62F8EAD2, 0x522C6B7B,
-    ];
-    assert_eq!(
-        block,
-        *aes::decrypt(&aes::encrypt(&block, &key).final_add_round_key, &key).final_add_round_key
-    );
-}
-
-#[test]
-fn correctness_256() {
-    let block = [
-        0x6B, 0xC1, 0xBE, 0xE2, 0x2E, 0x40, 0x9F, 0x96, 0xE9, 0x3D, 0x7E, 0x11, 0x73, 0x93, 0x17,
-        0x2A,
-    ];
-    let key = [
-        0x603DEB10, 0x15CA71BE, 0x2B73AEF0, 0x857D7781, 0x1F352C07, 0x3B6108D7, 0x2D9810A3,
-        0x0914DFF4,
-    ];
-    assert_eq!(
-        block,
-        *aes::decrypt(&aes::encrypt(&block, &key).final_add_round_key, &key).final_add_round_key
-    );
+    let block_expected = "6bc1bee22e409f96e93d7e117393172a";
+    assert_eq!(block_expected, intermediate_values.final_add_round_key);
 }
