@@ -178,39 +178,68 @@ fn galois_multiply(a: u8, b: u8) -> u8 {
     p
 }
 
-fn cipher(block: &[u8; 16], w: &[u32]) -> IntermediateValues {
+fn stage_enabled(enabled_stages: u64, stage: usize) -> bool {
+    (enabled_stages >> stage) & 1 != 0
+}
+
+fn apply_transformation<F>(
+    state: &mut [u8; NB * NB],
+    transformation: F,
+    stage: &mut usize,
+    enabled_stages: u64,
+) -> String
+where
+    F: Fn(&mut [u8; NB * NB]),
+{
+    if stage_enabled(enabled_stages, *stage) {
+        transformation(state);
+        *stage += 1;
+        u8_array_to_hex_string(state)
+    } else {
+        String::new()
+    }
+}
+
+fn cipher(block: &[u8; 16], w: &[u32], enabled_stages: u64) -> IntermediateValues {
+    let mut stage = 0;
     let mut intermediate_values = IntermediateValues::default();
     let mut state = block.clone();
-    add_round_key(&mut state, &w[0..4]);
-    intermediate_values.initial_add_round_key = u8_array_to_hex_string(&state);
-    let nr = w.len() / 4 - 1;
 
-    let rounds = (1..nr)
-        .map(|round| {
-            sub_bytes(&mut state);
-            let sub_bytes = u8_array_to_hex_string(&state);
-            shift_rows(&mut state);
-            let shift_rows = u8_array_to_hex_string(&state);
-            mix_columns(&mut state);
-            let mix_columns = u8_array_to_hex_string(&state);
-            add_round_key(&mut state, &w[(4 * round)..(4 * round + 4)]);
-            let add_round_key = u8_array_to_hex_string(&state);
-            Round {
-                sub_bytes,
-                shift_rows,
-                mix_columns,
-                add_round_key,
-            }
-        })
-        .collect::<Vec<_>>();
+    intermediate_values.initial_add_round_key = apply_transformation(
+        &mut state,
+        |state| add_round_key(state, &w[0..4]),
+        &mut stage,
+        enabled_stages,
+    );
+
+    let nr = w.len() / 4 - 1;
+    let mut rounds = Vec::with_capacity(nr - 1);
+
+    for round in 1..nr {
+        rounds.push(Round {
+            sub_bytes: apply_transformation(&mut state, sub_bytes, &mut stage, enabled_stages),
+            shift_rows: apply_transformation(&mut state, shift_rows, &mut stage, enabled_stages),
+            mix_columns: apply_transformation(&mut state, mix_columns, &mut stage, enabled_stages),
+            add_round_key: apply_transformation(
+                &mut state,
+                |state| add_round_key(state, &w[round * 4..(round + 1) * 4]),
+                &mut stage,
+                enabled_stages,
+            ),
+        });
+    }
 
     intermediate_values.rounds = rounds.into_boxed_slice();
-    sub_bytes(&mut state);
-    intermediate_values.sub_bytes = u8_array_to_hex_string(&state);
-    shift_rows(&mut state);
-    intermediate_values.shift_rows = u8_array_to_hex_string(&state);
-    add_round_key(&mut state, &w[w.len() - 4..]);
-    intermediate_values.final_add_round_key = u8_array_to_hex_string(&state);
+    intermediate_values.sub_bytes =
+        apply_transformation(&mut state, sub_bytes, &mut stage, enabled_stages);
+    intermediate_values.shift_rows =
+        apply_transformation(&mut state, shift_rows, &mut stage, enabled_stages);
+    intermediate_values.final_add_round_key = apply_transformation(
+        &mut state,
+        |state| add_round_key(state, &w[w.len() - 4..]),
+        &mut stage,
+        enabled_stages,
+    );
 
     intermediate_values
 }
@@ -318,9 +347,13 @@ fn u8_array_to_hex_string(data: &[u8]) -> String {
 }
 
 #[wasm_bindgen]
-pub fn encrypt(block: &[u8], key: &[u32]) -> IntermediateValues {
+pub fn encrypt(block: &[u8], key: &[u32], enabled_stages: u64) -> IntermediateValues {
     let w = key_expansion(&key);
-    cipher(block.try_into().expect("Block must be 16 byte array"), &w)
+    cipher(
+        block.try_into().expect("Block must be 16 byte array"),
+        &w,
+        enabled_stages,
+    )
 }
 
 #[wasm_bindgen]

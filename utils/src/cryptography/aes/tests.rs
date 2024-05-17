@@ -107,7 +107,7 @@ fn cipher() {
     ];
     let key = [0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C];
     let w = aes::key_expansion(&key);
-    let intermediate_values = aes::cipher(&block, &w);
+    let intermediate_values = aes::cipher(&block, &w, 0xFFFFFFFFFFFFFFFF);
     let cipher_text_expected = "3ad77bb40d7a3660a89ecaf32466ef97";
     assert_eq!(
         cipher_text_expected,
