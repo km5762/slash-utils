@@ -1,29 +1,15 @@
-<script setup>
+<script setup lang="ts">
 import init, {
   encrypt,
-  IntermediateValues,
+  IntermediateValue,
 } from "../../../../utils/pkg/slash_utils.js";
-import { toUint32Array, toUint8Array } from "../../../utils/conversions";
-import { store } from "./store";
-import { ref } from "vue";
+import { pinia } from "../../../lib/pinia.ts";
+import { toUint32Array, toUint8Array } from "../../../utils/conversions.ts";
+import { useEnabledTransformsStore } from "./EnabledTransformsStore.ts";
+import { useIntermediateValuesStore } from "./IntermediateValuesStore.ts";
+import { onBeforeMount } from "vue";
 
-const block = ref("");
-const key = ref("");
-
-async function computeIntermediateValues() {
-  await init();
-  const intermediate_values = encrypt(
-    toUint8Array(block.value),
-    toUint32Array(key.value)
-  );
-
-  store.free = intermediate_values.free;
-  store.final_add_round_key = intermediate_values.final_add_round_key;
-  store.initial_add_round_key = intermediate_values.initial_add_round_key;
-  store.rounds = intermediate_values.rounds;
-  store.shift_rows = intermediate_values.shift_rows;
-  store.sub_bytes = intermediate_values.sub_bytes;
-}
+const intermediateValuesStore = useIntermediateValuesStore(pinia);
 </script>
 
 <template>
@@ -34,18 +20,18 @@ async function computeIntermediateValues() {
       <input
         type="text"
         class="block rounded bg-slate-200 text-slate-950 border-slate-700 border"
-        v-model="block"
+        v-model="intermediateValuesStore.block"
     /></label>
     <label
       >Key:
       <input
         type="text"
         class="block rounded bg-slate-200 text-slate-950 border-slate-700 border"
-        v-model="key"
+        v-model="intermediateValuesStore.key"
     /></label>
     <button
       class="bg-teal-600 rounded px-4 py-2 font-bold mt-4"
-      @click="computeIntermediateValues"
+      @click="intermediateValuesStore.computeIntermediateValues"
     >
       COMPUTE
     </button>
