@@ -3,7 +3,7 @@ import init, {
   IntermediateValue,
   decrypt,
   encrypt,
-} from "../../../../utils/pkg/slash_utils";
+} from "@utils/cryptography/aes/pkg/aes";
 import { ref } from "vue";
 import { toUint8Array, toUint32Array } from "../../../utils/conversions";
 
