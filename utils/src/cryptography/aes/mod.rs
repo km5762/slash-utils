@@ -165,20 +165,20 @@ fn galois_multiply(a: u8, b: u8) -> u8 {
     p
 }
 
-fn stage_enabled(enabled_stages: u64, stage: usize) -> bool {
-    (enabled_stages >> stage) & 1 != 0
+fn transform_enabled(enabled_transforms: u64, stage: usize) -> bool {
+    (enabled_transforms >> stage) & 1 != 0
 }
 
 fn apply_transformation<F>(
     state: &mut [u8; NB * NB],
     transformation: F,
     stage: &mut usize,
-    enabled_stages: u64,
+    enabled_transforms: u64,
 ) -> String
 where
     F: Fn(&mut [u8; NB * NB]),
 {
-    if stage_enabled(enabled_stages, *stage) {
+    if transform_enabled(enabled_transforms, *stage) {
         transformation(state);
         *stage += 1;
         u8_array_to_hex_string(state)
@@ -308,43 +308,67 @@ fn inv_mix_columns(state: &mut [u8; NB * NB]) {
     }
 }
 
-// fn inv_cipher(block: &[u8; 16], w: &[u32]) -> IntermediateValues {
-//     let mut intermediate_values = IntermediateValues::default();
-//     let mut state = block.clone();
-//     add_round_key(&mut state, &w[w.len() - 4..]);
-//     intermediate_values.initial_add_round_key = u8_array_to_hex_string(&state);
-//     let nr = w.len() / 4 - 1;
 
-//     let rounds = (1..nr)
-//         .rev()
-//         .map(|round| {
-//             inv_shift_rows(&mut state);
-//             let shift_rows = u8_array_to_hex_string(&state);
-//             inv_sub_bytes(&mut state);
-//             let sub_bytes = u8_array_to_hex_string(&state);
-//             add_round_key(&mut state, &w[(4 * round)..(4 * round + 4)]);
-//             let add_round_key = u8_array_to_hex_string(&state);
-//             inv_mix_columns(&mut state);
-//             let mix_columns = u8_array_to_hex_string(&state);
-//             Round {
-//                 sub_bytes,
-//                 shift_rows,
-//                 mix_columns,
-//                 add_round_key,
-//             }
-//         })
-//         .collect::<Vec<_>>();
+fn inv_cipher(block: &[u8; 16], w: &[u32], enabled_transforms: u64) -> Box<[IntermediateValue]> {
+    let mut stage = 0;
+    let mut state = block.clone();
+    let nr = w.len() / 4 - 1;
+    let mut intermediate_values = Vec::with_capacity(nr * 4);
 
-//     intermediate_values.rounds = rounds.into_boxed_slice();
-//     inv_shift_rows(&mut state);
-//     intermediate_values.shift_rows = u8_array_to_hex_string(&state);
-//     inv_sub_bytes(&mut state);
-//     intermediate_values.sub_bytes = u8_array_to_hex_string(&state);
-//     add_round_key(&mut state, &w[0..4]);
-//     intermediate_values.final_add_round_key = u8_array_to_hex_string(&state);
+    intermediate_values.push(IntermediateValue {
+        transformation: String::from("Initial Add Round Key"),
+        value: apply_transformation(
+            &mut state,
+            |state| add_round_key(state, &w[w.len() - 4..]),
+            &mut stage,
+            enabled_transforms,
+        ),
+    });
 
-//     intermediate_values
-// }
+    for round in (1..nr).rev() {
+        intermediate_values.push(IntermediateValue {
+            transformation: String::from("Shift Rows"),
+            value: apply_transformation(&mut state, inv_shift_rows, &mut stage, enabled_transforms),
+        });
+        intermediate_values.push(IntermediateValue {
+            transformation: String::from("Sub Bytes"),
+            value: apply_transformation(&mut state, inv_sub_bytes, &mut stage, enabled_transforms),
+        });
+        intermediate_values.push(IntermediateValue {
+            transformation: String::from("Add Round Key"),
+            value: apply_transformation(
+                &mut state,
+                |state| add_round_key(state, &w[(4 * round)..(4 * round + 4)]),
+                &mut stage,
+                enabled_transforms,
+            ),
+        });
+        intermediate_values.push(IntermediateValue {
+            transformation: String::from("Mix Columns"),
+            value: apply_transformation(&mut state, inv_mix_columns, &mut stage, enabled_transforms),
+        });
+    }
+
+    intermediate_values.push(IntermediateValue {
+        transformation: String::from("Shift Rows"),
+        value: apply_transformation(&mut state, inv_shift_rows, &mut stage, enabled_transforms),
+    });
+    intermediate_values.push(IntermediateValue {
+        transformation: String::from("Sub Bytes"),
+        value: apply_transformation(&mut state, inv_sub_bytes, &mut stage, enabled_transforms),
+    });
+    intermediate_values.push(IntermediateValue {
+        transformation: String::from("Add Round Key"),
+        value: apply_transformation(
+            &mut state,
+            |state| add_round_key(state, &w[0..4]),
+            &mut stage,
+            enabled_transforms,
+        ),
+    });
+
+    intermediate_values.into_boxed_slice()
+}
 
 fn u8_array_to_hex_string(data: &[u8]) -> String {
     let hex_chars: Vec<String> = data.iter().map(|&byte| format!("{:02x}", byte)).collect();
@@ -361,8 +385,12 @@ pub fn encrypt(block: &[u8], key: &[u32], enabled_stages: u64) -> Box<[Intermedi
     )
 }
 
-// #[wasm_bindgen]
-// pub fn decrypt(block: &[u8], key: &[u32]) -> IntermediateValues {
-//     let w = key_expansion(&key);
-//     inv_cipher(block.try_into().expect("Block must be 16 byte array"), &w)
-// }
+#[wasm_bindgen]
+pub fn decrypt(block: &[u8], key: &[u32], enabled_stages: u64) -> Box<[IntermediateValue]> {
+    let w = key_expansion(&key);
+    inv_cipher(
+        block.try_into().expect("Block must be 16 byte array"),
+        &w,
+        enabled_stages,
+    )
+}

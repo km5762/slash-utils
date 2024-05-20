@@ -7,7 +7,7 @@ import { pinia } from "../../../lib/pinia.ts";
 import { toUint32Array, toUint8Array } from "../../../utils/conversions.ts";
 import { strip } from "../../../utils/string-formatting.ts";
 import { useEnabledTransformsStore } from "./EnabledTransformsStore.ts";
-import { useIntermediateValuesStore } from "./IntermediateValuesStore.ts";
+import { useIntermediateValuesStore, Mode } from "./IntermediateValuesStore.ts";
 import { onBeforeMount, ref } from "vue";
 import Container from "../../../components/Container.vue";
 
@@ -23,7 +23,7 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
           >Block:
           <textarea
             class="block rounded bg-slate-200 text-slate-950 border-slate-700 border w-full px-2"
-            v-model="intermediateValuesStore.block"
+            v-model="intermediateValuesStore.decryptedBlock"
           />
         </label>
         <label class=""
@@ -31,13 +31,18 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
           <textarea
             type="text"
             class="block rounded bg-slate-200 text-slate-950 border-slate-700 border w-full px-2"
-            v-model="intermediateValuesStore.key"
+            v-model="intermediateValuesStore.encryptionKey"
           />
         </label>
         <div class="flex justify-center">
           <button
             class="bg-teal-600 rounded px-4 py-2 font-bold mt-4 text-white"
-            @click="intermediateValuesStore.computeIntermediateValues"
+            @click="
+              () => {
+                intermediateValuesStore.mode = Mode.ENCRYPTION;
+                intermediateValuesStore.computeIntermediateValues();
+              }
+            "
           >
             ENCRYPT
           </button>
@@ -48,7 +53,7 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
           >Encrypted Block:
           <textarea
             class="block rounded bg-slate-200 text-slate-950 border-slate-700 border w-full px-2"
-            v-model="intermediateValuesStore.block"
+            v-model="intermediateValuesStore.encryptedBlock"
           />
         </label>
         <label class=""
@@ -56,13 +61,18 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
           <textarea
             type="text"
             class="block rounded bg-slate-200 text-slate-950 border-slate-700 border w-full px-2"
-            v-model="intermediateValuesStore.key"
+            v-model="intermediateValuesStore.decryptionKey"
           />
         </label>
         <div class="flex justify-center">
           <button
             class="bg-teal-600 rounded px-4 py-2 font-bold mt-4 text-white"
-            @click="intermediateValuesStore.computeIntermediateValues"
+            @click="
+              () => {
+                intermediateValuesStore.mode = Mode.DECRYPTION;
+                intermediateValuesStore.computeIntermediateValues();
+              }
+            "
           >
             DECRYPT
           </button>
