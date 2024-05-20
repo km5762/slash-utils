@@ -18,7 +18,7 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
     <table
       class="border-2 border-slate-900 rounded-xl border-separate table-fixed w-full"
     >
-      <TableRow class="text-2xl bg-slate-900">
+      <TableRow class="sm:text-2xl text-xl bg-slate-900">
         <TableHeading class="rounded-tl-xl">Step</TableHeading>
         <TableHeading class="">Value</TableHeading>
         <TableHeading class="rounded-tr-xl">Enabled</TableHeading>
