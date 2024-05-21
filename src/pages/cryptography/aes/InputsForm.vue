@@ -6,6 +6,7 @@ import { useEnabledTransformsStore } from "./EnabledTransformsStore.ts";
 import { useIntermediateValuesStore, Mode } from "./IntermediateValuesStore.ts";
 import { onBeforeMount, ref } from "vue";
 import Container from "../../../components/Container.vue";
+import TextArea from "@components/TextArea.vue";
 
 const intermediateValuesStore = useIntermediateValuesStore(pinia);
 </script>
@@ -17,18 +18,11 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
       <Container class="w-full max-w-96">
         <label
           >Block:
-          <textarea
-            class="block rounded bg-slate-200 text-slate-950 border-slate-700 border w-full px-2"
-            v-model="intermediateValuesStore.decryptedBlock"
-          />
+          <TextArea v-model="intermediateValuesStore.decryptedBlock" />
         </label>
         <label
           >Key:
-          <textarea
-            type="text"
-            class="block rounded bg-slate-200 text-slate-950 border-slate-700 border w-full px-2"
-            v-model="intermediateValuesStore.encryptionKey"
-          />
+          <TextArea v-model="intermediateValuesStore.encryptionKey" />
         </label>
         <div class="flex justify-center">
           <button
