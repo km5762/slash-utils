@@ -4,10 +4,9 @@ import TableData from "../../../components/TableData.vue";
 import TableHeading from "../../../components/TableHeading.vue";
 import { useIntermediateValuesStore } from "./IntermediateValuesStore";
 import { useEnabledTransformsStore } from "./EnabledTransformsStore";
-import { pinia } from "../../../lib/pinia";
 import { onBeforeMount } from "vue";
 
-const intermediateValuesStore = useIntermediateValuesStore(pinia);
+const intermediateValuesStore = useIntermediateValuesStore();
 </script>
 
 <template>

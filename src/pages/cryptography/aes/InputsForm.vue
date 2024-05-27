@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { pinia } from "../../../lib/pinia.ts";
 import { toUint32Array, toUint8Array } from "../../../utils/conversions.ts";
 import { strip } from "../../../utils/string-formatting.ts";
 import { useEnabledTransformsStore } from "./EnabledTransformsStore.ts";
 import { useIntermediateValuesStore, Mode } from "./IntermediateValuesStore.ts";
 import { onBeforeMount, ref } from "vue";
 import Container from "../../../components/Container.vue";
-import TextArea from "@components/TextArea.vue";
+import TextArea from "@/components/TextArea.vue";
 
-const intermediateValuesStore = useIntermediateValuesStore(pinia);
+const intermediateValuesStore = useIntermediateValuesStore();
 </script>
 
 <template>
