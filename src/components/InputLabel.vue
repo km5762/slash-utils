@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, type Ref } from "vue";
 import ToolTip from "./ToolTip.vue";
 import Info from "./icons/Info.vue";
-import { v4 as uuidv4 } from "uuid";
 
 defineOptions({
   inheritAttrs: false,
@@ -13,15 +12,30 @@ defineProps({
 });
 
 const visible = ref(false);
+const toolTip = ref<InstanceType<typeof ToolTip>>();
+const button = ref<HTMLButtonElement>();
+
+onMounted(() => {
+  document.addEventListener("click", (event) => {
+    if (
+      visible.value &&
+      !toolTip.value?.toolTip?.contains(event.target as Node) &&
+      !button.value?.contains(event.target as Node)
+    ) {
+      visible.value = false;
+    }
+  });
+});
 </script>
 
 <template>
   <label v-bind="$attrs">
     <slot name="text"></slot>
-    <ToolTip class="bg-slate-700/85" :visible="visible">
+    <ToolTip class="bg-slate-700/85" :visible="visible" ref="toolTip">
       <template #source>
         <button
           type="button"
+          ref="button"
           @click="
             () => {
               visible = !visible;
