@@ -17,14 +17,14 @@ defineExpose({
 </script>
 
 <template>
-  <div class="relative inline-block" @click.prevent>
+  <div class="relative inline-block">
     <slot name="source"></slot>
     <div
       ref="toolTip"
       id="tool-tip"
       v-bind="$attrs"
       v-show="visible"
-      :class="`absolute min-w-56 bg-inherit rounded-xl p-2 left-[calc(100%+17px)] -top-2`"
+      :class="`absolute min-w-56 bg-inherit rounded-xl p-2 left-[calc(100%+17px)] -top-2 z-50`"
     >
       <slot name="text"></slot>
       <div id="arrow" class="bg-inherit"></div>

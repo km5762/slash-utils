@@ -3,10 +3,6 @@ import { onMounted, ref, type Ref } from "vue";
 import ToolTip from "./ToolTip.vue";
 import Info from "./icons/Info.vue";
 
-defineOptions({
-  inheritAttrs: false,
-});
-
 defineProps({
   text: String,
 });
@@ -29,9 +25,6 @@ onMounted(() => {
 </script>
 
 <template>
-  <label v-bind="$attrs">
-    <slot name="text"></slot>
-  </label>
   <ToolTip class="bg-slate-700/85" :visible="visible" ref="toolTip">
     <template #source>
       <button
@@ -47,7 +40,7 @@ onMounted(() => {
       </button>
     </template>
     <template #text>
-      <slot name="tool-tip"></slot>
+      <slot></slot>
     </template>
   </ToolTip>
 </template>
