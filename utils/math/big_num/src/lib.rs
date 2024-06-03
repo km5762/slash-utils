@@ -44,12 +44,6 @@ impl <const N: usize> BigUInt<N> {
         s.chars().rev().collect()
     }
 
-    fn from_u32(n: u32) -> Self {
-        let mut limbs = [0; N];
-        limbs[0] = n;
-        Self { limbs}
-    }
-
     fn div_u32(&self, n: u32) -> (Self, u32) {
         let n64 = u64::from(n);
         let mut k = 0;
@@ -121,6 +115,30 @@ impl <const N: usize> core::ops::Add for BigUInt<N> {
                     panic!("integer overflow");
                 }
                 k = 1;
+            } else {
+                k = 0;
+            }
+        }
+
+        BigUInt { limbs: w }
+    }
+}
+
+impl <const N: usize> core::ops::Sub for BigUInt<N> {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let mut w = [0; N];
+        let mut k = 0;
+
+        for j in 0..N {
+            let difference = i64::from(self.limbs[j]) - i64::from(rhs.limbs[j]) + k;
+            w[j] = (difference % RADIX as i64) as u32;
+            if difference < 0 {
+                if j == (N - 1) {
+                    panic!("integer overflow");
+                }
+                k = -1;
             } else {
                 k = 0;
             }
@@ -351,5 +369,39 @@ mod tests {
         let from = binding.as_str();
         assert_eq!(src, from);
     }
+
+    #[test]
+    #[should_panic]
+    fn sub_overflow() {
+        let a = BigUInt { limbs: [0, u32::MAX, u32::MAX] };
+        let b = BigUInt { limbs: [1, u32::MAX, u32::MAX] };
+        let result = a - b;
+        assert_eq!(result, BigUInt::default());
+    }
+
+    #[test]
+    fn sub_to_zero() {
+        let a = BigUInt { limbs: [1, u32::MAX, u32::MAX] };
+        let b = BigUInt { limbs: [1, u32::MAX, u32::MAX] };
+        let result = a - b;
+        assert_eq!(result, BigUInt::default());
+    }
+
+    #[test]
+    fn sub_with_borrow() {
+        let a = BigUInt { limbs: [0, 0, 1] };
+        let b = BigUInt { limbs: [1, 0, 0] };
+        let result = a - b;
+        assert_eq!(result, BigUInt { limbs: [u32::MAX, u32::MAX, 0] });
+    }
+
+    #[test]
+    fn sub_with_borrow_to_zero() {
+        let a = BigUInt { limbs: [0, 0, 1] };
+        let b = BigUInt { limbs: [1, 1, 0] };
+        let result = a - b;
+        assert_eq!(result, BigUInt { limbs: [u32::MAX, u32::MAX - 1, 0] });
+    }
+
 }
 
