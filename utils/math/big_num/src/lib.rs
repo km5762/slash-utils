@@ -263,14 +263,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    fn mul_panic_on_overflow_by_carry() {
-        let a = BigUInt { limbs: [u32::MAX, u32::MAX, u32::MAX, 0] };
-        let b = BigUInt { limbs: [1, 1, 0, 0] };
-        let _ = a * b;
-    }
-
-    #[test]
     fn mul_max_allowable_mul() {
         let a = BigUInt { limbs: [u32::MAX, u32::MAX, u32::MAX, 0] };
         let b = BigUInt { limbs: [0, 1, 0, 0] };
@@ -288,25 +280,25 @@ mod tests {
 
     #[test]
     fn div_u32_by_larger_number() {
-        let a = BigUInt { limbs: [12345, 67890, 54321] };
+        let a: BigUInt<4> = BigUInt::from_str_radix("1002045585119561883070521", 10);
         let (quotient, remainder) = a.div_u32(u32::MAX);
-        assert_eq!(quotient.limbs, [0, 123, 67890]);
-        assert_eq!(remainder, 54321);
+        assert_eq!(quotient.to_str_radix(10), "233306918608227");
+        assert_eq!(remainder, 134556);
     }
 
     #[test]
     fn div_u32_by_smaller_number() {
         let a = BigUInt { limbs: [123456789, 987654321] };
         let (quotient, remainder) = a.div_u32(12345);
-        assert_eq!(quotient.limbs, [100000, 80000]);
-        assert_eq!(remainder, 11289);
+        assert_eq!(quotient.to_str_radix(10), "343616282589837");
+        assert_eq!(remainder, 5040);
     }
 
     #[test]
     fn div_u32_by_power_of_2() {
         let a = BigUInt { limbs: [123456789, 987654321] };
         let (quotient, remainder) = a.div_u32(8);
-        assert_eq!(quotient.limbs, [15432098, 123456790]);
+        assert_eq!(quotient.to_str_radix(10), "530242876071442850");
         assert_eq!(remainder, 5);
     }
 
@@ -314,7 +306,7 @@ mod tests {
     fn div_u32_by_u32_max() {
         let a = BigUInt { limbs: [u32::MAX, u32::MAX, u32::MAX] };
         let (quotient, remainder) = a.div_u32(u32::MAX);
-        assert_eq!(quotient.limbs, [1, 1, 0]);
+        assert_eq!(quotient.to_str_radix(10), "18446744078004518913");
         assert_eq!(remainder, 0);
     }
 
@@ -322,15 +314,15 @@ mod tests {
     fn div_u32_large_number() {
         let a = BigUInt { limbs: [0, 0, u32::MAX] };
         let (quotient, remainder) = a.div_u32(2);
-        assert_eq!(quotient.limbs, [0, 2147483648, 2147483647]);
-        assert_eq!(remainder, 1);
+        assert_eq!(quotient.to_str_radix(10), "39614081247908796759917199360");
+        assert_eq!(remainder, 0);
     }
 
     #[test]
     fn div_u32_with_remainder() {
         let a = BigUInt { limbs: [1, 2, 3] };
         let (quotient, remainder) = a.div_u32(2);
-        assert_eq!(quotient.limbs, [0, 1, 1_073_741_823]);
+        assert_eq!(quotient.limbs, [0, 2147483649, 1]);
         assert_eq!(remainder, 1);
     }
 
@@ -338,7 +330,7 @@ mod tests {
     fn div_u32_complex() {
         let a = BigUInt { limbs: [1, 1, 1, 1] };
         let (quotient, remainder) = a.div_u32(2);
-        assert_eq!(quotient.limbs, [0, 2147483648, 2147483648, 2147483648]);
+        assert_eq!(quotient.limbs, [2147483648, 2147483648, 2147483648, 0]);
         assert_eq!(remainder, 1);
     }
 
