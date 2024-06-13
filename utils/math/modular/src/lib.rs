@@ -1,6 +1,7 @@
 #![no_std]
 
 use num_traits::CheckedAdd;
+use num_traits::CheckedMul;
 use num_traits::CheckedSub;
 use num_traits::Euclid;
 use num_traits::One;
@@ -22,6 +23,7 @@ where
         + Euclid
         + CheckedSub
         + CheckedAdd
+        + CheckedMul
         + Copy
         + Sized
         + core::cmp::PartialOrd,
@@ -68,6 +70,13 @@ where
                 - b.checked_sub(&a)
                     .unwrap_or_else(|| (b % self.modulus) - (a % self.modulus))
         }
+    }
+
+    fn mul(&self, a: T, b: T) -> T {
+        let product = a
+            .checked_mul(&b)
+            .unwrap_or_else(|| (a % self.modulus) * (b % self.modulus));
+        product.rem_euclid(&self.modulus)
     }
 }
 
@@ -167,5 +176,42 @@ mod tests {
 
         assert_eq!(ring.sub(i32::MIN, i32::MAX), 4);
         assert_eq!(ring.sub(i32::MAX, i32::MIN), 3);
+    }
+
+    #[test]
+    fn multiplication_common_cases() {
+        let ring = Ring { modulus: 7 };
+
+        // Test cases for multiplication within modulus
+        assert_eq!(ring.mul(2, 3), 6);
+        assert_eq!(ring.mul(4, 2), 1);
+        assert_eq!(ring.mul(5, 3), 1);
+        assert_eq!(ring.mul(0, 6), 0);
+
+        // Test cases for multiplication with overflow
+        assert_eq!(ring.mul(3, 3), 2);
+        assert_eq!(ring.mul(6, 6), 1);
+    }
+
+    #[test]
+    fn multiplication_edge_cases() {
+        let ring = Ring { modulus: 7 };
+
+        assert_eq!(ring.mul(0, 0), 0);
+        assert_eq!(ring.mul(0, 1), 0);
+        assert_eq!(ring.mul(1, 0), 0);
+
+        let ring = Ring { modulus: 13 };
+
+        assert_eq!(ring.mul(12, 12), 1);
+        assert_eq!(ring.mul(6, 11), 1);
+    }
+
+    #[test]
+    fn multiplication_at_num_max() {
+        let ring = Ring { modulus: 7 };
+
+        assert_eq!(ring.mul(i8::MAX, i8::MAX), 1);
+        assert_eq!(ring.mul(i8::MAX, i8::MIN), 5);
     }
 }
