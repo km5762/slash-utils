@@ -11,6 +11,50 @@ use num_traits::Euclid;
 use num_traits::One;
 use num_traits::Zero;
 
+pub trait CurveTraits:
+    core::ops::Div<Output = Self>
+    + core::ops::Mul<Output = Self>
+    + core::ops::Sub<Output = Self>
+    + core::ops::Rem<Output = Self>
+    + core::ops::Add<Output = Self>
+    + core::ops::Shr<usize, Output = Self>
+    + core::ops::BitAnd<Output = Self>
+    + One
+    + Zero
+    + Euclid
+    + CheckedSub
+    + CheckedAdd
+    + CheckedMul
+    + From<u8>
+    + Copy
+    + LeadingZeros
+    + Sized
+    + core::cmp::PartialOrd
+{
+}
+
+impl<T> CurveTraits for T where
+    T: core::ops::Div<Output = Self>
+        + core::ops::Mul<Output = Self>
+        + core::ops::Sub<Output = Self>
+        + core::ops::Rem<Output = Self>
+        + core::ops::Add<Output = Self>
+        + core::ops::Shr<usize, Output = Self>
+        + core::ops::BitAnd<Output = Self>
+        + One
+        + Zero
+        + Euclid
+        + CheckedSub
+        + CheckedAdd
+        + CheckedMul
+        + From<u8>
+        + Copy
+        + LeadingZeros
+        + Sized
+        + core::cmp::PartialOrd
+{
+}
+
 #[derive(Clone, PartialEq, Debug)]
 struct Point<T> {
     x: T,
@@ -23,33 +67,13 @@ impl<T> Point<T> {
     }
 }
 
-struct Curve<T> {
+pub struct Curve<T> {
     a: T,
     b: T,
     ring: Ring<T>,
 }
 
-impl<T> Curve<T>
-where
-    T: core::ops::Div<Output = T>
-        + core::ops::Mul<Output = T>
-        + core::ops::Sub<Output = T>
-        + core::ops::Rem<Output = T>
-        + core::ops::Add<Output = T>
-        + core::ops::Shr<usize, Output = T>
-        + core::ops::BitAnd<Output = T>
-        + One
-        + Zero
-        + Euclid
-        + CheckedSub
-        + CheckedAdd
-        + CheckedMul
-        + From<u8>
-        + Copy
-        + LeadingZeros
-        + Sized
-        + core::cmp::PartialOrd,
-{
+impl<T: CurveTraits> Curve<T> {
     fn new(a: T, b: T, modulus: T) -> Curve<T> {
         Curve {
             a,

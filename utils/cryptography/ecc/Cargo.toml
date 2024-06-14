@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+elliptic_curve = {path = "../../math/elliptic_curve"}
 
 [lib]
 crate-type = ["cdylib", "rlib"]
