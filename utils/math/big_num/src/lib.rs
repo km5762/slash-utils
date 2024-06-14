@@ -11,21 +11,19 @@ struct BigUInt<const N: usize> {
 
 impl<const N: usize> Default for BigUInt<N> {
     fn default() -> Self {
-        BigUInt {
-            limbs: [0; N],
-        }
+        BigUInt { limbs: [0; N] }
     }
 }
 
-impl <const N: usize> BigUInt<N> {
-    fn new(limbs: [u32; N]) -> Self{
-        BigUInt {limbs}
+impl<const N: usize> BigUInt<N> {
+    fn new(limbs: [u32; N]) -> Self {
+        BigUInt { limbs }
     }
 
     fn from_u32(n: u32) -> Self {
         let mut limbs = [0; N];
         limbs[0] = n;
-    
+
         BigUInt::new(limbs)
     }
 
@@ -49,7 +47,9 @@ impl <const N: usize> BigUInt<N> {
             s.push(char::from_digit(remainder, radix).expect("asd"));
             num = quotient;
 
-            if quotient == BigUInt::default() {break};
+            if quotient == BigUInt::default() {
+                break;
+            };
         }
 
         s.chars().rev().collect()
@@ -93,8 +93,8 @@ impl <const N: usize> BigUInt<N> {
         let mut k = 0;
 
         for j in 0..N {
-            let sum = u64::from(self.limbs[j]) + if j > 0 {0} else {n64} + k;
-            w[j] = (sum % RADIX) as u32; 
+            let sum = u64::from(self.limbs[j]) + if j > 0 { 0 } else { n64 } + k;
+            w[j] = (sum % RADIX) as u32;
 
             if sum >= RADIX {
                 if j == (N - 1) {
@@ -126,17 +126,21 @@ impl <const N: usize> BigUInt<N> {
     fn checked_mul(&self, rhs: Self) -> Option<Self> {
         let mut w = [0; N];
         let mut k = 0;
-        
+
         for j in 0..N {
             k = 0;
-            if rhs.limbs[j] == 0 {continue};
+            if rhs.limbs[j] == 0 {
+                continue;
+            };
             for i in 0..N {
                 if i + j >= N {
                     if self.limbs[i] != 0 || rhs.limbs[i] != 0 {
                         return None;
                     }
                 } else {
-                    let t = u64::from(self.limbs[i]) * u64::from(rhs.limbs[j]) + u64::from(w[i + j]) + k;
+                    let t = u64::from(self.limbs[i]) * u64::from(rhs.limbs[j])
+                        + u64::from(w[i + j])
+                        + k;
                     w[i + j] = (t % RADIX) as u32;
                     k = t / RADIX;
                 }
@@ -152,8 +156,14 @@ impl <const N: usize> BigUInt<N> {
 
     fn shl_limb(&self, index: usize, shift: u32) -> u32 {
         let limb = self.limbs[index];
-        if shift == 0 {return limb};
-        let carry = if index == 0 {0} else {self.limbs[index - 1] >> (32 - shift)};
+        if shift == 0 {
+            return limb;
+        };
+        let carry = if index == 0 {
+            0
+        } else {
+            self.limbs[index - 1] >> (32 - shift)
+        };
         (limb << shift) | carry
     }
 
@@ -163,44 +173,63 @@ impl <const N: usize> BigUInt<N> {
         let dividend_digits = N - dividend.leading_zeros() as usize;
         let divisor_digits = N - divisor.leading_zeros() as usize;
 
-        if divisor_digits == 0 {panic!("attempt to divide by zero")};
-        if dividend_digits == 0 {return (BigUInt::default(), BigUInt::default())};
+        if divisor_digits == 0 {
+            panic!("attempt to divide by zero")
+        };
+        if dividend_digits == 0 {
+            return (BigUInt::default(), BigUInt::default());
+        };
         if divisor_digits == 1 {
             let (quotient, remainder) = self.div_u32(divisor.limbs[0]);
-            return (quotient, BigUInt::from_u32(remainder))
+            return (quotient, BigUInt::from_u32(remainder));
         }
 
         let shift = rhs.limbs[divisor_digits - 1].leading_zeros();
         let mut quotient: BigUInt<N> = BigUInt::default();
 
         let divisor_msd = divisor.shl_limb(divisor_digits - 1, shift);
-        let divisor_smsd = if divisor_digits == 1 {0} else {divisor.shl_limb(divisor_digits - 2, shift)};
+        let divisor_smsd = if divisor_digits == 1 {
+            0
+        } else {
+            divisor.shl_limb(divisor_digits - 2, shift)
+        };
 
         for i in (0..=(dividend_digits - divisor_digits)).rev() {
             let dividend_msd = if i == (dividend_digits - divisor_digits) {
-                if shift == 0 {0} else {dividend.limbs[dividend_digits - 1] >> (32 - shift)}            
+                if shift == 0 {
+                    0
+                } else {
+                    dividend.limbs[dividend_digits - 1] >> (32 - shift)
+                }
             } else {
                 dividend.shl_limb(divisor_digits + i, shift)
             };
             let dividend_smsd = dividend.shl_limb(divisor_digits + i - 1, shift);
-            let dividend_tmsd = if divisor_digits == 1 {0} else {dividend.shl_limb(divisor_digits + i - 2, shift)};
+            let dividend_tmsd = if divisor_digits == 1 {
+                0
+            } else {
+                dividend.shl_limb(divisor_digits + i - 2, shift)
+            };
 
-            let dividend_msd_combined = (u64::from(dividend_msd) * RADIX) + (u64::from(dividend_smsd));
+            let dividend_msd_combined =
+                (u64::from(dividend_msd) * RADIX) + (u64::from(dividend_smsd));
             let mut q_estimate = dividend_msd_combined / u64::from(divisor_msd);
             let mut r_estimate = dividend_msd_combined % u64::from(divisor_msd);
-            
-        
+
             loop {
-                if q_estimate >= RADIX 
-                || ((q_estimate * u64::from(divisor_smsd)) > ((r_estimate * RADIX) | u64::from(dividend_tmsd)))
+                if q_estimate >= RADIX
+                    || ((q_estimate * u64::from(divisor_smsd))
+                        > ((r_estimate * RADIX) | u64::from(dividend_tmsd)))
                 {
                     q_estimate -= 1;
                     r_estimate += u64::from(divisor_msd);
-                    if r_estimate < RADIX {continue};
+                    if r_estimate < RADIX {
+                        continue;
+                    };
                 }
                 break;
             }
-            
+
             // Based on previous loop, q_estimate must fit within 32 bits now
             let mut borrow = 0;
             let mut carry = 0;
@@ -217,28 +246,30 @@ impl <const N: usize> BigUInt<N> {
                 borrow = if sub < 0 { 1 } else { 0 };
                 dividend.limbs[i + divisor_digits] = sub as u32;
             }
-    
+
             if borrow != 0 {
                 q_estimate -= 1;
                 carry = 0;
                 for j in 0..divisor_digits {
-                    let add = u64::from(dividend.limbs[i + j]) + u64::from(divisor.limbs[j]) + carry;
+                    let add =
+                        u64::from(dividend.limbs[i + j]) + u64::from(divisor.limbs[j]) + carry;
                     carry = add >> 32;
                     dividend.limbs[i + j] = add as u32;
                 }
                 if i + divisor_digits < N {
-                    dividend.limbs[i + divisor_digits] = (u64::from(dividend.limbs[i + divisor_digits]) + carry) as u32;
+                    dividend.limbs[i + divisor_digits] =
+                        (u64::from(dividend.limbs[i + divisor_digits]) + carry) as u32;
                 }
             }
-    
+
             quotient.limbs[i] = q_estimate as u32;
         }
-        
+
         (quotient, dividend)
     }
 }
 
-impl <const N: usize> core::ops::Add for BigUInt<N> {
+impl<const N: usize> core::ops::Add for BigUInt<N> {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -263,7 +294,7 @@ impl <const N: usize> core::ops::Add for BigUInt<N> {
     }
 }
 
-impl <const N: usize> core::ops::Sub for BigUInt<N> {
+impl<const N: usize> core::ops::Sub for BigUInt<N> {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -287,7 +318,7 @@ impl <const N: usize> core::ops::Sub for BigUInt<N> {
     }
 }
 
-impl <const N: usize> core::cmp::PartialOrd for BigUInt<N> {
+impl<const N: usize> core::cmp::PartialOrd for BigUInt<N> {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         for i in (0..N).rev() {
             if self.limbs[i] > other.limbs[i] {
@@ -300,7 +331,7 @@ impl <const N: usize> core::cmp::PartialOrd for BigUInt<N> {
     }
 }
 
-impl <const N: usize> core::ops::Div for BigUInt<N> {
+impl<const N: usize> core::ops::Div for BigUInt<N> {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
@@ -308,7 +339,7 @@ impl <const N: usize> core::ops::Div for BigUInt<N> {
     }
 }
 
-impl <const N: usize> core::ops::Rem for BigUInt<N> {
+impl<const N: usize> core::ops::Rem for BigUInt<N> {
     type Output = Self;
 
     fn rem(self, rhs: Self) -> Self::Output {
@@ -316,7 +347,7 @@ impl <const N: usize> core::ops::Rem for BigUInt<N> {
     }
 }
 
-impl <const N: usize> core::ops::Mul for BigUInt<N> {
+impl<const N: usize> core::ops::Mul for BigUInt<N> {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -341,7 +372,7 @@ mod tests {
         let a = BigUInt::new([u32::MAX, u32::MAX, u32::MAX, 0]);
         let b = BigUInt::new([u32::MAX, u32::MAX, u32::MAX, 0]);
         let result = a + b;
-        assert_eq!(result.limbs, [u32::MAX - 1, u32::MAX , u32::MAX, 1]); // Check for carry propagation
+        assert_eq!(result.limbs, [u32::MAX - 1, u32::MAX, u32::MAX, 1]); // Check for carry propagation
     }
 
     #[test]
@@ -407,7 +438,6 @@ mod tests {
         let result = a * b;
         assert_eq!(result.limbs, [1, 0, 0, u32::MAX - 1, u32::MAX, u32::MAX]);
     }
-
 
     #[test]
     fn mul_triple() {
@@ -537,7 +567,12 @@ mod tests {
         let a = BigUInt::new([0, 0, 1]);
         let b = BigUInt::new([1, 0, 0]);
         let result = a - b;
-        assert_eq!(result, BigUInt { limbs: [u32::MAX, u32::MAX, 0] });
+        assert_eq!(
+            result,
+            BigUInt {
+                limbs: [u32::MAX, u32::MAX, 0]
+            }
+        );
     }
 
     #[test]
@@ -545,56 +580,57 @@ mod tests {
         let a = BigUInt::new([0, 0, 1]);
         let b = BigUInt::new([1, 1, 0]);
         let result = a - b;
-        assert_eq!(result, BigUInt { limbs: [u32::MAX, u32::MAX - 1, 0] });
+        assert_eq!(
+            result,
+            BigUInt {
+                limbs: [u32::MAX, u32::MAX - 1, 0]
+            }
+        );
     }
 
-
-    const test: [u32; 303] = [
+    const TEST: [u32; 303] = [
         // m, n, u...,          v...,          cq...,  cr....
-           1, 1, 3,             0,             1,      1,            // Error, divide by 0.
-           1, 2, 7,             1,3,           0,      7,0,          // Error, n > m.
-           2, 2, 0,0,           1,0,           0,      0,0,          // Error, incorrect remainder cr.
-           1, 1, 3,             2,             1,      1,
-           1, 1, 3,             3,             1,      0,
-           1, 1, 3,             4,             0,      3,
-           1, 1, 0,             0xffffffff,    0,      0,
-           1, 1, 0xffffffff,    1,             0xffffffff, 0,
-           1, 1, 0xffffffff,    0xffffffff,    1,      0,
-           1, 1, 0xffffffff,    3,             0x55555555, 0,
-           2, 1, 0xffffffff,0xffffffff, 1,     0xffffffff,0xffffffff, 0,
-           2, 1, 0xffffffff,0xffffffff, 0xffffffff,        1,1,    0,
-           2, 1, 0xffffffff,0xfffffffe, 0xffffffff,        0xffffffff,0, 0xfffffffe,
-           2, 1, 0x00005678,0x00001234, 0x00009abc,        0x1e1dba76,0, 0x6bd0,
-           2, 2, 0,0,           0,1,           0,      0,0,
-           2, 2, 0,7,           0,3,           2,      0,1,
-           2, 2, 5,7,           0,3,           2,      5,1,
-           2, 2, 0,6,           0,2,           3,      0,0,
-           1, 1, 0x80000000,  0x40000001, 0x00000001, 0x3fffffff,
-           2, 1, 0x00000000,0x80000000, 0x40000001, 0xfffffff8,0x00000001, 0x00000008,
-           2, 2, 0x00000000,0x80000000, 0x00000001,0x40000000, 0x00000001, 0xffffffff,0x3fffffff,
-           2, 2, 0x0000789a,0x0000bcde, 0x0000789a,0x0000bcde,          1,          0,0,
-           2, 2, 0x0000789b,0x0000bcde, 0x0000789a,0x0000bcde,          1,          1,0,
-           2, 2, 0x00007899,0x0000bcde, 0x0000789a,0x0000bcde,          0, 0x00007899,0x0000bcde,
-           2, 2, 0x0000ffff,0x0000ffff, 0x0000ffff,0x0000ffff,          1,          0,0,
-           2, 2, 0x0000ffff,0x0000ffff, 0x00000000,0x00000001, 0x0000ffff, 0x0000ffff,0,
-           3, 2, 0x000089ab,0x00004567,0x00000123, 0x00000000,0x00000001,   0x00004567,0x00000123, 0x000089ab,0,
-           3, 2, 0x00000000,0x0000fffe,0x00008000, 0x0000ffff,0x00008000,   0xffffffff,0x00000000, 0x0000ffff,0x00007fff, // Shows that first qhat can = b + 1.
-           3, 3, 0x00000003,0x00000000,0x80000000, 0x00000001,0x00000000,0x20000000,   0x00000003, 0,0,0x20000000, // Adding back step req'd.
-           3, 3, 0x00000003,0x00000000,0x00008000, 0x00000001,0x00000000,0x00002000,   0x00000003, 0,0,0x00002000, // Adding back step req'd.
-           4, 3, 0,0,0x00008000,0x00007fff, 1,0,0x00008000,   0xfffe0000,0, 0x00020000,0xffffffff,0x00007fff,  // Add back req'd.
-           4, 3, 0,0x0000fffe,0,0x00008000, 0x0000ffff,0,0x00008000, 0xffffffff,0, 0x0000ffff,0xffffffff,0x00007fff,  // Shows that mult-sub quantity cannot be treated as signed.
-           4, 3, 0,0xfffffffe,0,0x80000000, 0x0000ffff,0,0x80000000, 0x00000000,1, 0x00000000,0xfffeffff,0x00000000,  // Shows that mult-sub quantity cannot be treated as signed.
-           4, 3, 0,0xfffffffe,0,0x80000000, 0xffffffff,0,0x80000000, 0xffffffff,0, 0xffffffff,0xffffffff,0x7fffffff,  // Shows that mult-sub quantity cannot be treated as signed.
-        ];
+        1, 1, 3, 0, 1, 1, // Error, divide by 0.
+        1, 2, 7, 1, 3, 0, 7, 0, // Error, n > m.
+        2, 2, 0, 0, 1, 0, 0, 0, 0, // Error, incorrect remainder cr.
+        1, 1, 3, 2, 1, 1, 1, 1, 3, 3, 1, 0, 1, 1, 3, 4, 0, 3, 1, 1, 0, 0xffffffff, 0, 0, 1, 1,
+        0xffffffff, 1, 0xffffffff, 0, 1, 1, 0xffffffff, 0xffffffff, 1, 0, 1, 1, 0xffffffff, 3,
+        0x55555555, 0, 2, 1, 0xffffffff, 0xffffffff, 1, 0xffffffff, 0xffffffff, 0, 2, 1,
+        0xffffffff, 0xffffffff, 0xffffffff, 1, 1, 0, 2, 1, 0xffffffff, 0xfffffffe, 0xffffffff,
+        0xffffffff, 0, 0xfffffffe, 2, 1, 0x00005678, 0x00001234, 0x00009abc, 0x1e1dba76, 0, 0x6bd0,
+        2, 2, 0, 0, 0, 1, 0, 0, 0, 2, 2, 0, 7, 0, 3, 2, 0, 1, 2, 2, 5, 7, 0, 3, 2, 5, 1, 2, 2, 0,
+        6, 0, 2, 3, 0, 0, 1, 1, 0x80000000, 0x40000001, 0x00000001, 0x3fffffff, 2, 1, 0x00000000,
+        0x80000000, 0x40000001, 0xfffffff8, 0x00000001, 0x00000008, 2, 2, 0x00000000, 0x80000000,
+        0x00000001, 0x40000000, 0x00000001, 0xffffffff, 0x3fffffff, 2, 2, 0x0000789a, 0x0000bcde,
+        0x0000789a, 0x0000bcde, 1, 0, 0, 2, 2, 0x0000789b, 0x0000bcde, 0x0000789a, 0x0000bcde, 1,
+        1, 0, 2, 2, 0x00007899, 0x0000bcde, 0x0000789a, 0x0000bcde, 0, 0x00007899, 0x0000bcde, 2,
+        2, 0x0000ffff, 0x0000ffff, 0x0000ffff, 0x0000ffff, 1, 0, 0, 2, 2, 0x0000ffff, 0x0000ffff,
+        0x00000000, 0x00000001, 0x0000ffff, 0x0000ffff, 0, 3, 2, 0x000089ab, 0x00004567,
+        0x00000123, 0x00000000, 0x00000001, 0x00004567, 0x00000123, 0x000089ab, 0, 3, 2,
+        0x00000000, 0x0000fffe, 0x00008000, 0x0000ffff, 0x00008000, 0xffffffff, 0x00000000,
+        0x0000ffff, 0x00007fff, // Shows that first qhat can = b + 1.
+        3, 3, 0x00000003, 0x00000000, 0x80000000, 0x00000001, 0x00000000, 0x20000000, 0x00000003,
+        0, 0, 0x20000000, // Adding back step req'd.
+        3, 3, 0x00000003, 0x00000000, 0x00008000, 0x00000001, 0x00000000, 0x00002000, 0x00000003,
+        0, 0, 0x00002000, // Adding back step req'd.
+        4, 3, 0, 0, 0x00008000, 0x00007fff, 1, 0, 0x00008000, 0xfffe0000, 0, 0x00020000,
+        0xffffffff, 0x00007fff, // Add back req'd.
+        4, 3, 0, 0x0000fffe, 0, 0x00008000, 0x0000ffff, 0, 0x00008000, 0xffffffff, 0, 0x0000ffff,
+        0xffffffff, 0x00007fff, // Shows that mult-sub quantity cannot be treated as signed.
+        4, 3, 0, 0xfffffffe, 0, 0x80000000, 0x0000ffff, 0, 0x80000000, 0x00000000, 1, 0x00000000,
+        0xfffeffff, 0x00000000, // Shows that mult-sub quantity cannot be treated as signed.
+        4, 3, 0, 0xfffffffe, 0, 0x80000000, 0xffffffff, 0, 0x80000000, 0xffffffff, 0, 0xffffffff,
+        0xffffffff, 0x7fffffff, // Shows that mult-sub quantity cannot be treated as signed.
+    ];
 
     #[test]
     fn div_tests() {
         let mut j = 23;
-            
-        while j < test.len() {
-            let m = test[j] as usize;
+
+        while j < TEST.len() {
+            let m = TEST[j] as usize;
             j += 1;
-            let n = test[j] as usize;
+            let n = TEST[j] as usize;
             j += 1;
 
             let mut dividend = [0; 7];
@@ -602,7 +638,7 @@ mod tests {
             let bound = j + m;
 
             while j < bound {
-                dividend[last] = test[j];
+                dividend[last] = TEST[j];
                 last += 1;
                 j += 1;
             }
@@ -612,7 +648,7 @@ mod tests {
             let bound = j + n;
 
             while j < bound {
-                divisor[last] = test[j];
+                divisor[last] = TEST[j];
                 last += 1;
                 j += 1;
             }
@@ -622,7 +658,7 @@ mod tests {
             let bound = j + core::cmp::max(m - n + 1, 1);
 
             while j < bound {
-                quotient[last] = test[j];
+                quotient[last] = TEST[j];
                 last += 1;
                 j += 1;
             }
@@ -632,10 +668,10 @@ mod tests {
             let bound = j + n;
 
             while j < bound {
-                remainder[last] = test[j];
+                remainder[last] = TEST[j];
                 last += 1;
                 j += 1;
-            }         
+            }
 
             let big_dividend = BigUInt::new(dividend);
             let big_divisor = BigUInt::new(divisor);
@@ -644,7 +680,7 @@ mod tests {
             let (quotient, remainder) = big_dividend.div_rem(big_divisor);
 
             assert_eq!(
-                (big_quotient, big_remainder), 
+                (big_quotient, big_remainder),
                 (quotient, remainder),
                 "Test failed on iteration {}: \nDividend: {:?}\nDivisor: {:?}\nExpected Quotient: {:?}\nExpected Remainder: {:?}\nComputed Quotient: {:?}\nComputed Remainder: {:?}",
                 j,
@@ -654,7 +690,8 @@ mod tests {
                 big_remainder,
                 quotient,
                 remainder
-            );        }
+            );
+        }
     }
 
     #[test]
@@ -708,12 +745,30 @@ mod tests {
     }
 
     #[test]
-    fn div_divisor_greater_than_dividend() {
+    fn div_dividend_repeats_divisor() {
         let a = BigUInt::new([u32::MAX, u32::MAX]);
         let b = BigUInt::new([u32::MAX, 0]);
         let expected_quotient = BigUInt::new([1, 1]);
         let expected_remainder = BigUInt::new([0, 0]);
         assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
+    }
+
+    #[test]
+    fn div_divisor_exceeds_dividend() {
+        {
+            let a = BigUInt::new([3]);
+            let b = BigUInt::new([4]);
+            let expected_quotient = BigUInt::new([0]);
+            let expected_remainder = BigUInt::new([3]);
+            assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
+        }
+        {
+            let a = BigUInt::new([0x00007899, 0x0000bcde]);
+            let b = BigUInt::new([0x0000789a, 0x0000bcde]);
+            let expected_quotient = BigUInt::new([0, 0]);
+            let expected_remainder = BigUInt::new([0x00007899, 0x0000bcde]);
+            assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
+        }
     }
 
     #[test]
@@ -809,7 +864,6 @@ mod tests {
             let expected_remainder = BigUInt::new([0x000089ab, 0, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
-
     }
 
     #[test]
@@ -820,7 +874,7 @@ mod tests {
             let expected_quotient = BigUInt::new([0xffffffff, 0x00000000, 0x00000000]);
             let expected_remainder = BigUInt::new([0x0000ffff, 0x00007fff, 0x00000000]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
-        }        
+        }
     }
 
     #[test]
@@ -873,4 +927,3 @@ mod tests {
         }
     }
 }
-

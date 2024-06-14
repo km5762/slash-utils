@@ -7,7 +7,7 @@ use num_traits::Euclid;
 use num_traits::One;
 use num_traits::Zero;
 
-struct Ring<T> {
+pub struct Ring<T> {
     modulus: T,
 }
 
@@ -28,6 +28,10 @@ where
         + Sized
         + core::cmp::PartialOrd,
 {
+    pub fn new(modulus: T) -> Self {
+        Ring { modulus }
+    }
+
     fn extended_euclidean(a: T, b: T) -> (T, T, T) {
         let (mut x, mut y, mut x1, mut y1, mut a1, mut b1) =
             (T::one(), T::zero(), T::zero(), T::one(), a, b);
@@ -42,7 +46,7 @@ where
         (a1, x, y)
     }
 
-    fn mod_inv(&self, a: T) -> Option<T> {
+    pub fn mod_inv(&self, a: T) -> Option<T> {
         let (gcd, x, _) = Self::extended_euclidean(a, self.modulus);
 
         if gcd != T::one() {
@@ -53,14 +57,14 @@ where
         Some(inv)
     }
 
-    fn add(&self, a: T, b: T) -> T {
+    pub fn add(&self, a: T, b: T) -> T {
         let sum = a
             .checked_add(&b)
             .unwrap_or_else(|| (a % self.modulus) + (b % self.modulus));
         sum.rem_euclid(&self.modulus)
     }
 
-    fn sub(&self, a: T, b: T) -> T {
+    pub fn sub(&self, a: T, b: T) -> T {
         if a >= b {
             a.checked_sub(&b)
                 .unwrap_or_else(|| (a % self.modulus) - (b % self.modulus))
@@ -72,7 +76,7 @@ where
         }
     }
 
-    fn mul(&self, a: T, b: T) -> T {
+    pub fn mul(&self, a: T, b: T) -> T {
         let product = a
             .checked_mul(&b)
             .unwrap_or_else(|| (a % self.modulus) * (b % self.modulus));
