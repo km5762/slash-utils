@@ -3,12 +3,5 @@
 version = 3
 
 [[package]]
-name = "modular"
-version = "0.1.0"
-dependencies = [
- "numeric",
-]
-
-[[package]]
 name = "numeric"
 version = "0.1.0"

@@ -1,13 +1,13 @@
 pub trait LeadingZeros {
-    fn leading_zeros(self) -> u32;
+    fn leading_zeros(&self) -> u32;
 }
 
 macro_rules! impl_leading_zeros {
     ($($t:ty)*) => {
         $(
             impl LeadingZeros for $t {
-                fn leading_zeros(self) -> u32 {
-                    <$t>::leading_zeros(self)
+                fn leading_zeros(&self) -> u32 {
+                    <$t>::leading_zeros(*self)
                 }
             }
         )*

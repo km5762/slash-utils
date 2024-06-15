@@ -1,11 +1,12 @@
 #![no_std]
 
 use alloc::string::String;
+use numeric::{CheckedAdd, CheckedMul, CheckedSub, LeadingZeros, One, RemEuclid, Zero};
 extern crate alloc;
 const RADIX: u64 = u32::MAX as u64 + 1;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-struct BigUInt<const N: usize> {
+pub struct BigUInt<const N: usize> {
     limbs: [u32; N],
 }
 
@@ -27,7 +28,7 @@ impl<const N: usize> BigUInt<N> {
         BigUInt::new(limbs)
     }
 
-    fn from_str_radix(src: &str, radix: u32) -> Self {
+    pub fn from_str_radix(src: &str, radix: u32) -> Self {
         let mut num: BigUInt<N> = BigUInt::default();
 
         for char in src.chars() {
@@ -107,51 +108,6 @@ impl<const N: usize> BigUInt<N> {
         }
 
         BigUInt::new(w)
-    }
-
-    fn leading_zeros(&self) -> u32 {
-        let mut zeros = 0;
-
-        for i in (0..N).rev() {
-            if self.limbs[i] > 0 {
-                break;
-            } else {
-                zeros += 1;
-            }
-        }
-
-        zeros
-    }
-
-    fn checked_mul(&self, rhs: Self) -> Option<Self> {
-        let mut w = [0; N];
-        let mut k = 0;
-
-        for j in 0..N {
-            k = 0;
-            if rhs.limbs[j] == 0 {
-                continue;
-            };
-            for i in 0..N {
-                if i + j >= N {
-                    if self.limbs[i] != 0 || rhs.limbs[i] != 0 {
-                        return None;
-                    }
-                } else {
-                    let t = u64::from(self.limbs[i]) * u64::from(rhs.limbs[j])
-                        + u64::from(w[i + j])
-                        + k;
-                    w[i + j] = (t % RADIX) as u32;
-                    k = t / RADIX;
-                }
-            }
-        }
-
-        if k > 0 {
-            return None;
-        }
-
-        Some(BigUInt::new(w))
     }
 
     fn shl_limb(&self, index: usize, shift: u32) -> u32 {
@@ -273,24 +229,7 @@ impl<const N: usize> core::ops::Add for BigUInt<N> {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        let mut w = [0; N];
-        let mut k = 0;
-
-        for j in 0..N {
-            let sum = u64::from(self.limbs[j]) + u64::from(rhs.limbs[j]) + k;
-            w[j] = (sum % RADIX) as u32; // this is guaranteed to never overflow because we are reducing by the radix
-
-            if sum >= RADIX {
-                if j == (N - 1) {
-                    panic!("integer overflow");
-                }
-                k = 1;
-            } else {
-                k = 0;
-            }
-        }
-
-        BigUInt::new(w)
+        self.checked_add(&rhs).expect("integer overflow")
     }
 }
 
@@ -298,23 +237,7 @@ impl<const N: usize> core::ops::Sub for BigUInt<N> {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        let mut w = [0; N];
-        let mut k = 0;
-
-        for j in 0..N {
-            let difference = i64::from(self.limbs[j]) - i64::from(rhs.limbs[j]) + k;
-            w[j] = (difference % RADIX as i64) as u32;
-            if difference < 0 {
-                if j == (N - 1) {
-                    panic!("integer overflow");
-                }
-                k = -1;
-            } else {
-                k = 0;
-            }
-        }
-
-        BigUInt::new(w)
+        self.checked_sub(&rhs).expect("integer overflow")
     }
 }
 
@@ -351,7 +274,160 @@ impl<const N: usize> core::ops::Mul for BigUInt<N> {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        self.checked_mul(rhs).expect("integer overflow")
+        self.checked_mul(&rhs).expect("integer overflow")
+    }
+}
+
+impl<const N: usize> core::ops::Shr<usize> for BigUInt<N> {
+    type Output = Self;
+
+    fn shr(self, rhs: usize) -> Self::Output {
+        let mut carry = 0;
+        let mut limbs = [0; N];
+
+        for i in (0..N).rev() {
+            limbs[i] = (self.limbs[i] << rhs) | carry;
+            carry = self.limbs[i] & ((1 << rhs) - 1);
+        }
+
+        BigUInt::new(limbs)
+    }
+}
+
+impl<const N: usize> core::ops::BitAnd for BigUInt<N> {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        let mut limbs = [0; N];
+
+        for i in 0..N {
+            limbs[i] = self.limbs[i] & rhs.limbs[i];
+        }
+
+        BigUInt::new(limbs)
+    }
+}
+
+impl<const N: usize> One for BigUInt<N> {
+    fn one() -> Self {
+        let mut limbs = [0; N];
+        limbs[0] = 1;
+
+        BigUInt::new(limbs)
+    }
+}
+
+impl<const N: usize> Zero for BigUInt<N> {
+    fn zero() -> Self {
+        BigUInt::default()
+    }
+}
+
+impl<const N: usize> RemEuclid for BigUInt<N> {
+    fn rem_euclid(&self, v: &Self) -> Self {
+        *self % *v
+    }
+}
+
+impl<const N: usize> CheckedAdd for BigUInt<N> {
+    fn checked_add(&self, v: &Self) -> Option<Self> {
+        let mut w = [0; N];
+        let mut k = 0;
+
+        for j in 0..N {
+            let sum = u64::from(self.limbs[j]) + u64::from(v.limbs[j]) + k;
+            w[j] = (sum % RADIX) as u32;
+            if sum >= RADIX {
+                if j == (N - 1) {
+                    return None;
+                }
+                k = 1;
+            } else {
+                k = 0;
+            }
+        }
+
+        Some(BigUInt::new(w))
+    }
+}
+
+impl<const N: usize> CheckedSub for BigUInt<N> {
+    fn checked_sub(&self, v: &Self) -> Option<Self> {
+        let mut w = [0; N];
+        let mut k = 0;
+
+        for j in 0..N {
+            let difference = i64::from(self.limbs[j]) - i64::from(v.limbs[j]) + k;
+            w[j] = (difference % RADIX as i64) as u32;
+            if difference < 0 {
+                if j == (N - 1) {
+                    return None;
+                }
+                k = -1;
+            } else {
+                k = 0;
+            }
+        }
+
+        Some(BigUInt::new(w))
+    }
+}
+
+impl<const N: usize> CheckedMul for BigUInt<N> {
+    fn checked_mul(&self, rhs: &Self) -> Option<Self> {
+        let mut w = [0; N];
+        let mut k = 0;
+
+        for j in 0..N {
+            k = 0;
+            if rhs.limbs[j] == 0 {
+                continue;
+            };
+            for i in 0..N {
+                if i + j >= N {
+                    if self.limbs[i] != 0 || rhs.limbs[i] != 0 {
+                        return None;
+                    }
+                } else {
+                    let t = u64::from(self.limbs[i]) * u64::from(rhs.limbs[j])
+                        + u64::from(w[i + j])
+                        + k;
+                    w[i + j] = (t % RADIX) as u32;
+                    k = t / RADIX;
+                }
+            }
+        }
+
+        if k > 0 {
+            return None;
+        }
+
+        Some(BigUInt::new(w))
+    }
+}
+
+impl<const N: usize> LeadingZeros for BigUInt<N> {
+    fn leading_zeros(&self) -> u32 {
+        let mut zeros = 0;
+
+        for i in (0..N).rev() {
+            if self.limbs[i] > 0 {
+                break;
+            } else {
+                zeros += 1;
+            }
+        }
+
+        zeros
+    }
+}
+
+impl<const N: usize> From<u8> for BigUInt<N> {
+    fn from(value: u8) -> Self {
+        let mut limbs = [0; N];
+        limbs[0] = value as u32;
+
+        BigUInt::new(limbs)
     }
 }
 

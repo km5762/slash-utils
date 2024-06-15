@@ -1,27 +1,20 @@
 #![no_std]
 
-mod leading_zeros;
-
-use leading_zeros::LeadingZeros;
+use core::ops::{Add, BitAnd, Div, Mul, Rem, Shr, Sub};
 use modular::Ring;
-use num_traits::CheckedAdd;
-use num_traits::CheckedMul;
-use num_traits::CheckedSub;
-use num_traits::Euclid;
-use num_traits::One;
-use num_traits::Zero;
+use numeric::{self, CheckedAdd, CheckedMul, CheckedSub, LeadingZeros, One, RemEuclid, Zero};
 
-pub trait CurveTraits:
-    core::ops::Div<Output = Self>
-    + core::ops::Mul<Output = Self>
-    + core::ops::Sub<Output = Self>
-    + core::ops::Rem<Output = Self>
-    + core::ops::Add<Output = Self>
-    + core::ops::Shr<usize, Output = Self>
-    + core::ops::BitAnd<Output = Self>
+pub trait Numeric:
+    Div<Output = Self>
+    + Mul<Output = Self>
+    + Rem<Output = Self>
+    + Sub<Output = Self>
+    + Add<Output = Self>
+    + Shr<usize, Output = Self>
+    + BitAnd<Output = Self>
     + One
     + Zero
-    + Euclid
+    + RemEuclid
     + CheckedSub
     + CheckedAdd
     + CheckedMul
@@ -33,17 +26,17 @@ pub trait CurveTraits:
 {
 }
 
-impl<T> CurveTraits for T where
-    T: core::ops::Div<Output = Self>
-        + core::ops::Mul<Output = Self>
-        + core::ops::Sub<Output = Self>
-        + core::ops::Rem<Output = Self>
-        + core::ops::Add<Output = Self>
-        + core::ops::Shr<usize, Output = Self>
-        + core::ops::BitAnd<Output = Self>
+impl<T> Numeric for T where
+    T: Div<Output = Self>
+        + Mul<Output = Self>
+        + Rem<Output = Self>
+        + Sub<Output = Self>
+        + Add<Output = Self>
+        + Shr<usize, Output = Self>
+        + BitAnd<Output = Self>
         + One
         + Zero
-        + Euclid
+        + RemEuclid
         + CheckedSub
         + CheckedAdd
         + CheckedMul
@@ -56,13 +49,13 @@ impl<T> CurveTraits for T where
 }
 
 #[derive(Clone, PartialEq, Debug)]
-struct Point<T> {
-    x: T,
-    y: T,
+pub struct Point<T> {
+    pub x: T,
+    pub y: T,
 }
 
 impl<T> Point<T> {
-    fn new(x: T, y: T) -> Point<T> {
+    pub fn new(x: T, y: T) -> Point<T> {
         Point { x, y }
     }
 }
@@ -73,8 +66,8 @@ pub struct Curve<T> {
     ring: Ring<T>,
 }
 
-impl<T: CurveTraits> Curve<T> {
-    fn new(a: T, b: T, modulus: T) -> Curve<T> {
+impl<T: Numeric> Curve<T> {
+    pub fn new(a: T, b: T, modulus: T) -> Curve<T> {
         Curve {
             a,
             b,
@@ -82,7 +75,7 @@ impl<T: CurveTraits> Curve<T> {
         }
     }
 
-    fn add(&self, p: &Point<T>, q: &Point<T>) -> Option<Point<T>> {
+    pub fn add(&self, p: &Point<T>, q: &Point<T>) -> Option<Point<T>> {
         let three = T::from(3);
         let two = T::from(2);
 
@@ -90,7 +83,7 @@ impl<T: CurveTraits> Curve<T> {
             let num = self.ring.sub(q.y, p.y);
             let denom = self.ring.sub(q.x, p.x);
 
-            match self.ring.mod_inv(denom) {
+            match self.ring.inv(denom) {
                 Some(inv) => self.ring.mul(num, inv),
                 None => return None,
             }
@@ -99,7 +92,7 @@ impl<T: CurveTraits> Curve<T> {
             let num = self.ring.add(self.ring.mul(three, px2), self.a);
             let denom = self.ring.mul(two, p.y);
 
-            match self.ring.mod_inv(denom) {
+            match self.ring.inv(denom) {
                 Some(inv) => self.ring.mul(num, inv),
                 None => return None,
             }
@@ -114,7 +107,7 @@ impl<T: CurveTraits> Curve<T> {
         Some(Point::new(x, y))
     }
 
-    fn mul(&self, p: &Point<T>, d: T) -> Option<Point<T>> {
+    pub fn mul(&self, p: &Point<T>, d: T) -> Option<Point<T>> {
         let size = core::mem::size_of::<T>() * 8;
         let bits = size - d.leading_zeros() as usize;
         let mut res = p.clone();
@@ -136,7 +129,7 @@ impl<T: CurveTraits> Curve<T> {
         Some(res)
     }
 
-    fn is_valid_point(&self, p: &Point<T>) -> bool {
+    pub fn is_valid_point(&self, p: &Point<T>) -> bool {
         let lhs = self.ring.mul(p.y, p.y);
         let rhs = self.ring.add(
             self.ring.add(

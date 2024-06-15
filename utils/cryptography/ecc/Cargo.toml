@@ -5,6 +5,8 @@ edition = "2021"
 
 [dependencies]
 elliptic_curve = {path = "../../math/elliptic_curve"}
+modular = {path = "../../math/modular"}
+big_num = {path = "../../math/big_num"}
 
 [lib]
 crate-type = ["cdylib", "rlib"]

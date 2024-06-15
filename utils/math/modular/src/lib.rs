@@ -1,11 +1,6 @@
 #![no_std]
 
-use num_traits::CheckedAdd;
-use num_traits::CheckedMul;
-use num_traits::CheckedSub;
-use num_traits::Euclid;
-use num_traits::One;
-use num_traits::Zero;
+use numeric::{CheckedAdd, CheckedMul, CheckedSub, One, RemEuclid, Zero};
 
 pub struct Ring<T> {
     modulus: T,
@@ -20,7 +15,7 @@ where
         + core::ops::Add<Output = T>
         + One
         + Zero
-        + Euclid
+        + RemEuclid
         + CheckedSub
         + CheckedAdd
         + CheckedMul
@@ -46,7 +41,7 @@ where
         (a1, x, y)
     }
 
-    pub fn mod_inv(&self, a: T) -> Option<T> {
+    pub fn inv(&self, a: T) -> Option<T> {
         let (gcd, x, _) = Self::extended_euclidean(a, self.modulus);
 
         if gcd != T::one() {
@@ -105,37 +100,37 @@ mod tests {
     fn mod_inv_common_cases() {
         let ring = Ring { modulus: 13 };
 
-        assert_eq!(ring.mod_inv(2), Some(7));
-        assert_eq!(ring.mod_inv(4), Some(10));
-        assert_eq!(ring.mod_inv(5), Some(8));
-        assert_eq!(ring.mod_inv(7), Some(2));
-        assert_eq!(ring.mod_inv(10), Some(4));
+        assert_eq!(ring.inv(2), Some(7));
+        assert_eq!(ring.inv(4), Some(10));
+        assert_eq!(ring.inv(5), Some(8));
+        assert_eq!(ring.inv(7), Some(2));
+        assert_eq!(ring.inv(10), Some(4));
 
-        assert_eq!(ring.mod_inv(13), None);
-        assert_eq!(ring.mod_inv(0), None);
+        assert_eq!(ring.inv(13), None);
+        assert_eq!(ring.inv(0), None);
 
         let ring = Ring { modulus: 26 };
-        assert_eq!(ring.mod_inv(7), Some(15));
-        assert_eq!(ring.mod_inv(12), None);
+        assert_eq!(ring.inv(7), Some(15));
+        assert_eq!(ring.inv(12), None);
     }
 
     #[test]
     fn mod_inv_edge_cases() {
         let ring = Ring { modulus: 17 };
 
-        assert_eq!(ring.mod_inv(1), Some(1));
-        assert_eq!(ring.mod_inv(16), Some(16));
+        assert_eq!(ring.inv(1), Some(1));
+        assert_eq!(ring.inv(16), Some(16));
 
         let ring = Ring { modulus: 20 };
 
-        assert_eq!(ring.mod_inv(3), Some(7));
-        assert_eq!(ring.mod_inv(15), None);
+        assert_eq!(ring.inv(3), Some(7));
+        assert_eq!(ring.inv(15), None);
 
         let ring = Ring { modulus: 8 };
 
-        assert_eq!(ring.mod_inv(1), Some(1));
-        assert_eq!(ring.mod_inv(3), Some(3));
-        assert_eq!(ring.mod_inv(5), Some(5));
+        assert_eq!(ring.inv(1), Some(1));
+        assert_eq!(ring.inv(3), Some(3));
+        assert_eq!(ring.inv(5), Some(5));
     }
 
     #[test]
