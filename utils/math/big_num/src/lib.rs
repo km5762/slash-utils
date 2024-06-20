@@ -295,12 +295,24 @@ impl<const N: usize> core::ops::Shr<usize> for BigUInt<N> {
     type Output = Self;
 
     fn shr(self, rhs: usize) -> Self::Output {
-        let mut carry = 0;
-        let mut limbs = [0; N];
+        let limb_shifts = rhs / 32;
+        let bit_shifts = rhs % 32;
 
-        for i in (0..N).rev() {
-            limbs[i] = (self.limbs[i] << rhs) | carry;
-            carry = self.limbs[i] & ((1 << rhs) - 1);
+        let mut limbs = self.limbs;
+
+        for i in 0..limb_shifts {
+            limbs[i] = 0;
+        }
+
+        limbs.rotate_left(limb_shifts);
+
+        if bit_shifts > 0 {
+            let mut carry = 0;
+
+            for i in (0..N).rev() {
+                limbs[i] = (self.limbs[i] >> bit_shifts) | carry;
+                carry = self.limbs[i] & ((1 << bit_shifts) - 1);
+            }
         }
 
         BigUInt::new(limbs)
