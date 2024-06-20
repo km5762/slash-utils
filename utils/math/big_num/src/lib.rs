@@ -1,9 +1,11 @@
 #![no_std]
 
+mod types;
+
 use alloc::string::String;
 use numeric::{CheckedAdd, CheckedMul, CheckedSub, LeadingZeros, One, RemEuclid, Zero};
+use types::RADIX;
 extern crate alloc;
-const RADIX: u64 = u32::MAX as u64 + 1;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct BigUInt<const N: usize> {
