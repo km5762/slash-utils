@@ -21,6 +21,19 @@ impl<const N: usize> BigUInt<N> {
         BigUInt { limbs }
     }
 
+    fn digits(&self) -> usize {
+        let mut digits = 0;
+
+        for i in (0..N).rev() {
+            if self.limbs[i] > 0 {
+                digits = i + 1;
+                break;
+            }
+        }
+
+        digits
+    }
+
     fn from_u32(n: u32) -> Self {
         let mut limbs = [0; N];
         limbs[0] = n;
@@ -39,7 +52,7 @@ impl<const N: usize> BigUInt<N> {
         num
     }
 
-    fn to_str_radix(&self, radix: u32) -> String {
+    pub fn to_str_radix(&self, radix: u32) -> String {
         let mut s = String::new();
         let mut num = *self;
 
@@ -126,8 +139,8 @@ impl<const N: usize> BigUInt<N> {
     fn div_rem(&self, rhs: Self) -> (Self, Self) {
         let mut dividend = *self;
         let divisor = rhs;
-        let dividend_digits = N - dividend.leading_zeros() as usize;
-        let divisor_digits = N - divisor.leading_zeros() as usize;
+        let dividend_digits = dividend.digits();
+        let divisor_digits = divisor.digits();
 
         if divisor_digits == 0 {
             panic!("attempt to divide by zero")
@@ -411,10 +424,11 @@ impl<const N: usize> LeadingZeros for BigUInt<N> {
         let mut zeros = 0;
 
         for i in (0..N).rev() {
-            if self.limbs[i] > 0 {
+            let limb_zeros = self.limbs[i].leading_zeros();
+            zeros += limb_zeros;
+
+            if limb_zeros < 32 {
                 break;
-            } else {
-                zeros += 1;
             }
         }
 

@@ -1,5 +1,7 @@
 #![no_std]
 
+use core::mem::swap;
+
 use numeric::{CheckedAdd, CheckedMul, CheckedSub, One, RemEuclid, Zero};
 
 pub struct Ring<T> {
@@ -27,22 +29,40 @@ where
         Ring { modulus }
     }
 
-    fn extended_euclidean(a: T, b: T) -> (T, T, T) {
-        let (mut x, mut y, mut x1, mut y1, mut a1, mut b1) =
-            (T::one(), T::zero(), T::zero(), T::one(), a, b);
-
-        while b1 > T::zero() {
-            let q = a1 / b1;
-            (x, x1) = (x1, x - q * x1);
-            (y, y1) = (y1, y - q * y1);
-            (a1, b1) = (b1, a1 - q * b1);
+    fn extended_euclidean(&self, a: T, b: T) -> (T, T, T) {
+        let mut r0 = a;
+        let mut r1 = b;
+        let mut s0 = T::one();
+        let mut s1 = T::zero();
+        let mut t0 = T::zero();
+        let mut t1 = T::one();
+        let mut n = 0;
+        while r1 > T::zero() {
+            let q = r0 / r1;
+            r0 = if r0 > (q * r1) {
+                r0 - q * r1
+            } else {
+                q * r1 - r0
+            };
+            swap(&mut r0, &mut r1);
+            s0 = s0 + q * s1;
+            swap(&mut s0, &mut s1);
+            t0 = t0 + q * t1;
+            swap(&mut t0, &mut t1);
+            n += 1;
         }
 
-        (a1, x, y)
+        if (n % 2) != 0 {
+            s0 = b - s0
+        } else {
+            t0 = a - t0
+        };
+
+        (r0, s0, t0)
     }
 
     pub fn inv(&self, a: T) -> Option<T> {
-        let (gcd, x, _) = Self::extended_euclidean(a, self.modulus);
+        let (gcd, x, _) = self.extended_euclidean(a, self.modulus);
 
         if gcd != T::one() {
             return None;
@@ -85,15 +105,15 @@ mod tests {
 
     #[test]
     fn extended_euclidean_common_cases() {
-        let extended_euclidean = Ring::extended_euclidean;
+        let ring = Ring { modulus: 13 };
 
-        assert_eq!(extended_euclidean(101, 13), (1, 4, -31));
-        assert_eq!(extended_euclidean(123, 19), (1, -2, 13));
-        assert_eq!(extended_euclidean(25, 36), (1, 13, -9));
-        assert_eq!(extended_euclidean(69, 54), (3, -7, 9));
-        assert_eq!(extended_euclidean(55, 79), (1, 23, -16));
-        assert_eq!(extended_euclidean(33, 44), (11, -1, 1));
-        assert_eq!(extended_euclidean(50, 70), (10, 3, -2));
+        assert_eq!(ring.extended_euclidean(101, 13), (1, 4, -31));
+        assert_eq!(ring.extended_euclidean(123, 19), (1, -2, 13));
+        assert_eq!(ring.extended_euclidean(25, 36), (1, 13, -9));
+        assert_eq!(ring.extended_euclidean(69, 54), (3, -7, 9));
+        assert_eq!(ring.extended_euclidean(55, 79), (1, 23, -16));
+        assert_eq!(ring.extended_euclidean(33, 44), (11, -1, 1));
+        assert_eq!(ring.extended_euclidean(50, 70), (10, 3, -2));
     }
 
     #[test]
