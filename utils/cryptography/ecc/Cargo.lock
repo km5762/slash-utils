@@ -16,6 +16,7 @@ dependencies = [
  "big_num",
  "elliptic_curve",
  "modular",
+ "numeric",
 ]
 
 [[package]]

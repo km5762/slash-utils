@@ -19,7 +19,7 @@ impl<const N: usize> Default for BigUInt<N> {
 }
 
 impl<const N: usize> BigUInt<N> {
-    fn new(limbs: [u32; N]) -> Self {
+    pub const fn new(limbs: [u32; N]) -> Self {
         BigUInt { limbs }
     }
 

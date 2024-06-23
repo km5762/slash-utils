@@ -1,50 +1,20 @@
 #![no_std]
 
-use core::ops::{Add, BitAnd, Div, Mul, Rem, Shr, Sub};
-use modular::Ring;
-use numeric::{self, CheckedAdd, CheckedMul, CheckedSub, LeadingZeros, One, RemEuclid, Zero};
+use core::ops::{BitAnd, Shr};
+use modular::{Narrowed, Ring, Widened};
+use numeric::{LeadingZeros, Widen};
 
 pub trait Numeric:
-    Div<Output = Self>
-    + Mul<Output = Self>
-    + Rem<Output = Self>
-    + Sub<Output = Self>
-    + Add<Output = Self>
-    + Shr<usize, Output = Self>
-    + BitAnd<Output = Self>
-    + One
-    + Zero
-    + RemEuclid
-    + CheckedSub
-    + CheckedAdd
-    + CheckedMul
-    + From<u8>
-    + Copy
-    + LeadingZeros
-    + Sized
-    + core::cmp::PartialOrd
+    modular::Narrowed + From<u8> + Shr<usize, Output = Self> + BitAnd<Output = Self> + LeadingZeros
 {
 }
 
 impl<T> Numeric for T where
-    T: Div<Output = Self>
-        + Mul<Output = Self>
-        + Rem<Output = Self>
-        + Sub<Output = Self>
-        + Add<Output = Self>
+    T: modular::Narrowed
+        + From<u8>
         + Shr<usize, Output = Self>
         + BitAnd<Output = Self>
-        + One
-        + Zero
-        + RemEuclid
-        + CheckedSub
-        + CheckedAdd
-        + CheckedMul
-        + From<u8>
-        + Copy
         + LeadingZeros
-        + Sized
-        + core::cmp::PartialOrd
 {
 }
 
@@ -66,7 +36,10 @@ pub struct Curve<T> {
     ring: Ring<T>,
 }
 
-impl<T: Numeric> Curve<T> {
+impl<T: Numeric> Curve<T>
+where
+    <T as Widen>::Output: Widened<T>,
+{
     pub fn new(a: T, b: T, modulus: T) -> Curve<T> {
         Curve {
             a,

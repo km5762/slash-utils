@@ -7,6 +7,7 @@ edition = "2021"
 elliptic_curve = {path = "../../math/elliptic_curve"}
 modular = {path = "../../math/modular"}
 big_num = {path = "../../math/big_num"}
+numeric = {path = "../../traits/numeric"}
 
 [lib]
 crate-type = ["cdylib", "rlib"]

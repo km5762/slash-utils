@@ -1,5 +1,5 @@
 use crate::BigUInt;
-use numeric::WideningMul;
+use numeric::{Narrow, Widen};
 
 pub const RADIX: u64 = u32::MAX as u64 + 1;
 
@@ -9,38 +9,44 @@ pub type U1024 = BigUInt<32>;
 pub type U2048 = BigUInt<64>;
 pub type U4096 = BigUInt<128>;
 
-macro_rules! impl_widening_mul {
-    ($Type:ident, $Size:expr) => {
-        impl WideningMul for $Type<$Size> {
-            type Output = $Type<{ $Size * 2 }>;
+macro_rules! impl_narrow {
+    ($narrow_size: expr) => {
+        impl Narrow for BigUInt<{ $narrow_size * 2 }> {
+            type Output = BigUInt<$narrow_size>;
 
-            fn widening_mul(&self, rhs: &Self) -> Self::Output {
-                let mut w = [0; $Size * 2];
-                let mut k = 0;
+            fn narrow(&self) -> BigUInt<$narrow_size> {
+                let mut limbs = [0; $narrow_size];
+                limbs.clone_from_slice(&self.limbs[..$narrow_size]);
 
-                for j in 0..$Size {
-                    k = 0;
-                    if rhs.limbs[j] == 0 {
-                        continue;
-                    }
-                    for i in 0..$Size {
-                        let t = u64::from(self.limbs[i]) * u64::from(rhs.limbs[j])
-                            + u64::from(w[i + j])
-                            + k;
-                        w[i + j] = (t % RADIX) as u32;
-                        k = t / RADIX;
-                    }
-                    w[$Size + j] = k as u32;
-                }
-
-                $Type::new(w)
+                BigUInt::new(limbs)
             }
         }
     };
 }
 
-impl_widening_mul!(BigUInt, 8);
-impl_widening_mul!(BigUInt, 16);
-impl_widening_mul!(BigUInt, 32);
-impl_widening_mul!(BigUInt, 64);
-impl_widening_mul!(BigUInt, 128);
+impl_narrow!(8);
+impl_narrow!(16);
+impl_narrow!(32);
+impl_narrow!(64);
+impl_narrow!(128);
+
+macro_rules! impl_widen {
+    ($narrow_size: expr) => {
+        impl Widen for BigUInt<{ $narrow_size }> {
+            type Output = BigUInt<{ $narrow_size * 2 }>;
+
+            fn widen(&self) -> BigUInt<{ $narrow_size * 2 }> {
+                let mut limbs = [0; $narrow_size * 2];
+                limbs[..$narrow_size].clone_from_slice(&self.limbs);
+
+                BigUInt::new(limbs)
+            }
+        }
+    };
+}
+
+impl_widen!(4);
+impl_widen!(8);
+impl_widen!(16);
+impl_widen!(32);
+impl_widen!(64);

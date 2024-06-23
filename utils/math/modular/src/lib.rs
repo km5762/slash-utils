@@ -1,20 +1,35 @@
 #![no_std]
 
-use core::mem::swap;
+use core::{
+    mem::swap,
+    ops::{Mul, Rem},
+};
 
-use numeric::{CheckedAdd, CheckedMul, CheckedSub, One, RemEuclid, Zero};
+use numeric::{CheckedAdd, CheckedMul, CheckedSub, Narrow, One, RemEuclid, Widen, Zero};
 
-pub struct Ring<T> {
-    modulus: T,
+pub trait Numeric:
+    core::ops::Div<Output = Self>
+    + core::ops::Mul<Output = Self>
+    + core::ops::Sub<Output = Self>
+    + core::ops::Rem<Output = Self>
+    + core::ops::Add<Output = Self>
+    + One
+    + Zero
+    + RemEuclid
+    + CheckedSub
+    + CheckedAdd
+    + CheckedMul
+    + Copy
+    + Sized
+    + core::cmp::PartialOrd
+{
 }
-
-impl<T> Ring<T>
-where
-    T: core::ops::Div<Output = T>
-        + core::ops::Mul<Output = T>
-        + core::ops::Sub<Output = T>
-        + core::ops::Rem<Output = T>
-        + core::ops::Add<Output = T>
+impl<T> Numeric for T where
+    T: core::ops::Div<Output = Self>
+        + core::ops::Mul<Output = Self>
+        + core::ops::Sub<Output = Self>
+        + core::ops::Rem<Output = Self>
+        + core::ops::Add<Output = Self>
         + One
         + Zero
         + RemEuclid
@@ -23,23 +38,39 @@ where
         + CheckedMul
         + Copy
         + Sized
-        + core::cmp::PartialOrd,
+        + core::cmp::PartialOrd
+{
+}
+
+pub trait Narrowed: Numeric + Widen {}
+impl<T> Narrowed for T where T: Numeric + Widen {}
+
+pub trait Widened<T>: Numeric + Narrow<Output = T> {}
+impl<T, U> Widened<U> for T where T: Numeric + Narrow<Output = U> {}
+
+pub struct Ring<T> {
+    modulus: T,
+}
+
+impl<T: Narrowed> Ring<T>
+where
+    <T as Widen>::Output: Widened<T>,
 {
     pub fn new(modulus: T) -> Self {
         Ring { modulus }
     }
 
     fn extended_euclidean(&self, a: T, b: T) -> (T, T, T) {
-        let mut r0 = a;
-        let mut r1 = b;
-        let mut s0 = T::one();
-        let mut s1 = T::zero();
-        let mut t0 = T::zero();
-        let mut t1 = T::one();
+        let mut r0 = a.widen();
+        let mut r1 = b.widen();
+        let mut s0 = T::one().widen();
+        let mut s1 = T::zero().widen();
+        let mut t0 = T::zero().widen();
+        let mut t1 = T::one().widen();
         let mut n = 0;
-        while r1 > T::zero() {
+        while r1 > T::zero().widen() {
             let q = r0 / r1;
-            r0 = if r0 > (q * r1) {
+            r0 = if r0 > q * r1 {
                 r0 - q * r1
             } else {
                 q * r1 - r0
@@ -53,12 +84,12 @@ where
         }
 
         if (n % 2) != 0 {
-            s0 = b - s0
+            s0 = b.widen() - s0
         } else {
-            t0 = a - t0
+            t0 = a.widen() - t0
         };
 
-        (r0, s0, t0)
+        (r0.narrow(), s0.narrow(), t0.narrow())
     }
 
     pub fn inv(&self, a: T) -> Option<T> {
@@ -68,15 +99,13 @@ where
             return None;
         }
 
-        let inv = (x % self.modulus + self.modulus) % self.modulus;
-        Some(inv)
+        let inv = (x.widen() % self.modulus.widen() + self.modulus.widen()) % self.modulus.widen();
+        Some(inv.narrow())
     }
 
     pub fn add(&self, a: T, b: T) -> T {
-        let sum = a
-            .checked_add(&b)
-            .unwrap_or_else(|| (a % self.modulus) + (b % self.modulus));
-        sum.rem_euclid(&self.modulus)
+        let sum = a.widen() + b.widen();
+        (sum.rem_euclid(&self.modulus.widen())).narrow()
     }
 
     pub fn sub(&self, a: T, b: T) -> T {
@@ -92,10 +121,8 @@ where
     }
 
     pub fn mul(&self, a: T, b: T) -> T {
-        let product = a
-            .checked_mul(&b)
-            .unwrap_or_else(|| (a % self.modulus) * (b % self.modulus));
-        product.rem_euclid(&self.modulus)
+        let product = a.widen() * b.widen();
+        (product.rem_euclid(&self.modulus.widen())).narrow()
     }
 }
 
