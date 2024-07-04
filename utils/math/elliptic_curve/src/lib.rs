@@ -2,21 +2,11 @@
 
 use core::ops::{BitAnd, Shr};
 use modular::{Narrowed, Ring, Widened};
-use numeric::{LeadingZeros, Widen};
+use numeric::{Bit, LeadingZeros, Widen};
 
-pub trait Numeric:
-    modular::Narrowed + From<u8> + Shr<usize, Output = Self> + BitAnd<Output = Self> + LeadingZeros
-{
-}
+pub trait Numeric: modular::Narrowed + From<u8> + Bit + LeadingZeros {}
 
-impl<T> Numeric for T where
-    T: modular::Narrowed
-        + From<u8>
-        + Shr<usize, Output = Self>
-        + BitAnd<Output = Self>
-        + LeadingZeros
-{
-}
+impl<T> Numeric for T where T: modular::Narrowed + From<u8> + Bit + LeadingZeros {}
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Point<T> {
@@ -25,7 +15,7 @@ pub struct Point<T> {
 }
 
 impl<T> Point<T> {
-    pub fn new(x: T, y: T) -> Point<T> {
+    pub const fn new(x: T, y: T) -> Point<T> {
         Point { x, y }
     }
 }
@@ -91,7 +81,7 @@ where
                 None => return None,
             };
 
-            if ((d >> i) & T::one()) == T::one() {
+            if d.bit(i) {
                 res = match self.add(&res, &p) {
                     Some(res) => res,
                     None => return None,

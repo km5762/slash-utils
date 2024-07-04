@@ -3,7 +3,7 @@
 mod types;
 
 use alloc::string::String;
-use numeric::{CheckedAdd, CheckedMul, CheckedSub, LeadingZeros, One, RemEuclid, Zero};
+use numeric::{Bit, CheckedAdd, CheckedMul, CheckedSub, LeadingZeros, One, RemEuclid, Zero};
 use types::RADIX;
 extern crate alloc;
 
@@ -69,6 +69,10 @@ impl<const N: usize> BigUInt<N> {
         }
 
         s.chars().rev().collect()
+    }
+
+    pub fn to_limbs(&self) -> [u32; N] {
+        self.limbs
     }
 
     fn div_u32(&self, n: u32) -> (Self, u32) {
@@ -293,31 +297,9 @@ impl<const N: usize> core::ops::Mul for BigUInt<N> {
     }
 }
 
-impl<const N: usize> core::ops::Shr<usize> for BigUInt<N> {
-    type Output = Self;
-
-    fn shr(self, rhs: usize) -> Self::Output {
-        let limb_shifts = rhs / 32;
-        let bit_shifts = rhs % 32;
-
-        let mut limbs = self.limbs;
-
-        for i in 0..limb_shifts {
-            limbs[i] = 0;
-        }
-
-        limbs.rotate_left(limb_shifts);
-
-        if bit_shifts > 0 {
-            let mut carry = 0;
-
-            for i in (0..N).rev() {
-                limbs[i] = (self.limbs[i] >> bit_shifts) | carry;
-                carry = self.limbs[i] & ((1 << bit_shifts) - 1);
-            }
-        }
-
-        BigUInt::new(limbs)
+impl<const N: usize> Bit for BigUInt<N> {
+    fn bit(&self, index: usize) -> bool {
+        self.limbs[index / 32].bit(index % 32)
     }
 }
 
@@ -461,6 +443,8 @@ impl<const N: usize> From<u8> for BigUInt<N> {
 
 #[cfg(test)]
 mod tests {
+    use types::U256;
+
     use super::*;
 
     #[test]
