@@ -1,26 +1,43 @@
 #![no_std]
 
-mod types;
+pub mod types;
+
+use core::fmt::{self, LowerHex};
 
 use alloc::string::String;
-use numeric::{Bit, CheckedAdd, CheckedMul, CheckedSub, LeadingZeros, One, RemEuclid, Zero};
+use numeric::{
+    Bit, CheckedAdd, CheckedMul, CheckedSub, FromBeBytes, FromStrRadix, LeadingZeros, One,
+    RemEuclid, Zero,
+};
 use types::RADIX;
 extern crate alloc;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
-pub struct BigUInt<const N: usize> {
-    limbs: [u32; N],
-}
+#[derive(Debug)]
+pub struct ParseBigIntError;
 
-impl<const N: usize> Default for BigUInt<N> {
-    fn default() -> Self {
-        BigUInt { limbs: [0; N] }
+impl fmt::Display for ParseBigIntError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "failed parsing string into integer")
     }
 }
 
-impl<const N: usize> BigUInt<N> {
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub struct BigUint<const N: usize> {
+    limbs: [u32; N],
+}
+
+impl<const N: usize> Default for BigUint<N> {
+    fn default() -> Self {
+        BigUint { limbs: [0; N] }
+    }
+}
+
+impl<const N: usize> BigUint<N> {
+    pub const BYTES: usize = N * 4;
+    pub const LIMBS: usize = N;
+
     pub const fn new(limbs: [u32; N]) -> Self {
-        BigUInt { limbs }
+        BigUint { limbs }
     }
 
     fn digits(&self) -> usize {
@@ -40,18 +57,7 @@ impl<const N: usize> BigUInt<N> {
         let mut limbs = [0; N];
         limbs[0] = n;
 
-        BigUInt::new(limbs)
-    }
-
-    pub fn from_str_radix(src: &str, radix: u32) -> Self {
-        let mut num: BigUInt<N> = BigUInt::default();
-
-        for char in src.chars() {
-            let digit = char.to_digit(radix).expect("invalid char for given radix");
-            num = num.mul_u32(radix).add_u32(digit);
-        }
-
-        num
+        BigUint::new(limbs)
     }
 
     pub fn to_str_radix(&self, radix: u32) -> String {
@@ -63,7 +69,7 @@ impl<const N: usize> BigUInt<N> {
             s.push(char::from_digit(remainder, radix).expect("asd"));
             num = quotient;
 
-            if quotient == BigUInt::default() {
+            if quotient == BigUint::default() {
                 break;
             };
         }
@@ -86,7 +92,7 @@ impl<const N: usize> BigUInt<N> {
             k = cur % n64;
         }
 
-        (BigUInt::new(w), k as u32)
+        (BigUint::new(w), k as u32)
     }
 
     fn mul_u32(&self, n: u32) -> Self {
@@ -104,7 +110,7 @@ impl<const N: usize> BigUInt<N> {
             panic!("integer overflow");
         }
 
-        BigUInt::new(w)
+        BigUint::new(w)
     }
 
     fn add_u32(&self, n: u32) -> Self {
@@ -126,7 +132,7 @@ impl<const N: usize> BigUInt<N> {
             }
         }
 
-        BigUInt::new(w)
+        BigUint::new(w)
     }
 
     fn shl_limb(&self, index: usize, shift: u32) -> u32 {
@@ -152,15 +158,15 @@ impl<const N: usize> BigUInt<N> {
             panic!("attempt to divide by zero")
         };
         if dividend_digits == 0 {
-            return (BigUInt::default(), BigUInt::default());
+            return (BigUint::default(), BigUint::default());
         };
         if divisor_digits == 1 {
             let (quotient, remainder) = self.div_u32(divisor.limbs[0]);
-            return (quotient, BigUInt::from_u32(remainder));
+            return (quotient, BigUint::from_u32(remainder));
         }
 
         let shift = rhs.limbs[divisor_digits - 1].leading_zeros();
-        let mut quotient: BigUInt<N> = BigUInt::default();
+        let mut quotient: BigUint<N> = BigUint::default();
 
         let divisor_msd = divisor.shl_limb(divisor_digits - 1, shift);
         let divisor_smsd = if divisor_digits == 1 {
@@ -244,7 +250,39 @@ impl<const N: usize> BigUInt<N> {
     }
 }
 
-impl<const N: usize> core::ops::Add for BigUInt<N> {
+impl<const N: usize> fmt::LowerHex for BigUint<N> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let hex_str = self.to_str_radix(16);
+        write!(f, "{}", hex_str)
+    }
+}
+
+impl<const N: usize> fmt::UpperHex for BigUint<N> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let hex_str = self.to_str_radix(16);
+        write!(f, "{}", hex_str.to_uppercase())
+    }
+}
+
+impl<const N: usize> FromStrRadix for BigUint<N> {
+    type Error = ParseBigIntError;
+
+    fn from_str_radix(src: &str, radix: u32) -> Result<Self, Self::Error> {
+        let mut num: BigUint<N> = BigUint::default();
+
+        for char in src.chars() {
+            let digit = match char.to_digit(radix) {
+                Some(digit) => digit,
+                None => return Err(ParseBigIntError),
+            };
+            num = num.mul_u32(radix).add_u32(digit);
+        }
+
+        Ok(num)
+    }
+}
+
+impl<const N: usize> core::ops::Add for BigUint<N> {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -252,7 +290,7 @@ impl<const N: usize> core::ops::Add for BigUInt<N> {
     }
 }
 
-impl<const N: usize> core::ops::Sub for BigUInt<N> {
+impl<const N: usize> core::ops::Sub for BigUint<N> {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -260,7 +298,7 @@ impl<const N: usize> core::ops::Sub for BigUInt<N> {
     }
 }
 
-impl<const N: usize> core::cmp::PartialOrd for BigUInt<N> {
+impl<const N: usize> core::cmp::PartialOrd for BigUint<N> {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         for i in (0..N).rev() {
             if self.limbs[i] > other.limbs[i] {
@@ -273,7 +311,7 @@ impl<const N: usize> core::cmp::PartialOrd for BigUInt<N> {
     }
 }
 
-impl<const N: usize> core::ops::Div for BigUInt<N> {
+impl<const N: usize> core::ops::Div for BigUint<N> {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
@@ -281,7 +319,7 @@ impl<const N: usize> core::ops::Div for BigUInt<N> {
     }
 }
 
-impl<const N: usize> core::ops::Rem for BigUInt<N> {
+impl<const N: usize> core::ops::Rem for BigUint<N> {
     type Output = Self;
 
     fn rem(self, rhs: Self) -> Self::Output {
@@ -289,7 +327,7 @@ impl<const N: usize> core::ops::Rem for BigUInt<N> {
     }
 }
 
-impl<const N: usize> core::ops::Mul for BigUInt<N> {
+impl<const N: usize> core::ops::Mul for BigUint<N> {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -297,13 +335,13 @@ impl<const N: usize> core::ops::Mul for BigUInt<N> {
     }
 }
 
-impl<const N: usize> Bit for BigUInt<N> {
+impl<const N: usize> Bit for BigUint<N> {
     fn bit(&self, index: usize) -> bool {
         self.limbs[index / 32].bit(index % 32)
     }
 }
 
-impl<const N: usize> core::ops::BitAnd for BigUInt<N> {
+impl<const N: usize> core::ops::BitAnd for BigUint<N> {
     type Output = Self;
 
     fn bitand(self, rhs: Self) -> Self::Output {
@@ -313,32 +351,32 @@ impl<const N: usize> core::ops::BitAnd for BigUInt<N> {
             limbs[i] = self.limbs[i] & rhs.limbs[i];
         }
 
-        BigUInt::new(limbs)
+        BigUint::new(limbs)
     }
 }
 
-impl<const N: usize> One for BigUInt<N> {
+impl<const N: usize> One for BigUint<N> {
     fn one() -> Self {
         let mut limbs = [0; N];
         limbs[0] = 1;
 
-        BigUInt::new(limbs)
+        BigUint::new(limbs)
     }
 }
 
-impl<const N: usize> Zero for BigUInt<N> {
+impl<const N: usize> Zero for BigUint<N> {
     fn zero() -> Self {
-        BigUInt::default()
+        BigUint::default()
     }
 }
 
-impl<const N: usize> RemEuclid for BigUInt<N> {
+impl<const N: usize> RemEuclid for BigUint<N> {
     fn rem_euclid(&self, v: &Self) -> Self {
         *self % *v
     }
 }
 
-impl<const N: usize> CheckedAdd for BigUInt<N> {
+impl<const N: usize> CheckedAdd for BigUint<N> {
     fn checked_add(&self, v: &Self) -> Option<Self> {
         let mut w = [0; N];
         let mut k = 0;
@@ -356,11 +394,11 @@ impl<const N: usize> CheckedAdd for BigUInt<N> {
             }
         }
 
-        Some(BigUInt::new(w))
+        Some(BigUint::new(w))
     }
 }
 
-impl<const N: usize> CheckedSub for BigUInt<N> {
+impl<const N: usize> CheckedSub for BigUint<N> {
     fn checked_sub(&self, v: &Self) -> Option<Self> {
         let mut w = [0; N];
         let mut k = 0;
@@ -378,11 +416,11 @@ impl<const N: usize> CheckedSub for BigUInt<N> {
             }
         }
 
-        Some(BigUInt::new(w))
+        Some(BigUint::new(w))
     }
 }
 
-impl<const N: usize> CheckedMul for BigUInt<N> {
+impl<const N: usize> CheckedMul for BigUint<N> {
     fn checked_mul(&self, rhs: &Self) -> Option<Self> {
         let mut w = [0; N];
         let mut k = 0;
@@ -411,11 +449,11 @@ impl<const N: usize> CheckedMul for BigUInt<N> {
             return None;
         }
 
-        Some(BigUInt::new(w))
+        Some(BigUint::new(w))
     }
 }
 
-impl<const N: usize> LeadingZeros for BigUInt<N> {
+impl<const N: usize> LeadingZeros for BigUint<N> {
     fn leading_zeros(&self) -> u32 {
         let mut zeros = 0;
 
@@ -432,49 +470,47 @@ impl<const N: usize> LeadingZeros for BigUInt<N> {
     }
 }
 
-impl<const N: usize> From<u8> for BigUInt<N> {
+impl<const N: usize> From<u8> for BigUint<N> {
     fn from(value: u8) -> Self {
         let mut limbs = [0; N];
         limbs[0] = value as u32;
 
-        BigUInt::new(limbs)
+        BigUint::new(limbs)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use types::U256;
-
     use super::*;
 
     #[test]
     fn add() {
-        let a = BigUInt::new([100, 200, 300]);
-        let b = BigUInt::new([400, 500, 600]);
+        let a = BigUint::new([100, 200, 300]);
+        let b = BigUint::new([400, 500, 600]);
         let result = a + b;
         assert_eq!(result.limbs, [500, 700, 900]);
     }
 
     #[test]
     fn add_with_carry() {
-        let a = BigUInt::new([u32::MAX, u32::MAX, u32::MAX, 0]);
-        let b = BigUInt::new([u32::MAX, u32::MAX, u32::MAX, 0]);
+        let a = BigUint::new([u32::MAX, u32::MAX, u32::MAX, 0]);
+        let b = BigUint::new([u32::MAX, u32::MAX, u32::MAX, 0]);
         let result = a + b;
         assert_eq!(result.limbs, [u32::MAX - 1, u32::MAX, u32::MAX, 1]); // Check for carry propagation
     }
 
     #[test]
     fn add_with_0() {
-        let a = BigUInt::new([100, 200, 300]);
-        let b = BigUInt::new([0, 0, 0]);
+        let a = BigUint::new([100, 200, 300]);
+        let b = BigUint::new([0, 0, 0]);
         let result = a + b;
         assert_eq!(result.limbs, [100, 200, 300]); // Adding zero should not change the value
     }
 
     #[test]
     fn add_with_carry_propagation() {
-        let a = BigUInt::new([u32::MAX, u32::MAX, u32::MAX, 0]);
-        let b = BigUInt::new([1, 0, 0, 0]);
+        let a = BigUint::new([u32::MAX, u32::MAX, u32::MAX, 0]);
+        let b = BigUint::new([1, 0, 0, 0]);
         let result = a + b;
         assert_eq!(result.limbs, [0, 0, 0, 1]);
     }
@@ -482,55 +518,55 @@ mod tests {
     #[test]
     #[should_panic]
     fn add_panic_on_overflow() {
-        let a = BigUInt::new([u32::MAX, u32::MAX, u32::MAX]);
-        let b = BigUInt::new([1, 0, 0]);
+        let a = BigUint::new([u32::MAX, u32::MAX, u32::MAX]);
+        let b = BigUint::new([1, 0, 0]);
         let _ = a + b;
     }
 
     #[test]
     fn mul_with_0() {
-        let a = BigUInt::new([u32::MAX, u32::MAX, u32::MAX, u32::MAX]);
-        let b = BigUInt::new([0, 0, 0, 0]);
+        let a = BigUint::new([u32::MAX, u32::MAX, u32::MAX, u32::MAX]);
+        let b = BigUint::new([0, 0, 0, 0]);
         let result = a * b;
         assert_eq!(result.limbs, [0, 0, 0, 0]);
     }
 
     #[test]
     fn mul_with_1() {
-        let a = BigUInt::new([u32::MAX, u32::MAX, u32::MAX, u32::MAX]);
-        let b = BigUInt::new([1, 0, 0, 0]);
+        let a = BigUint::new([u32::MAX, u32::MAX, u32::MAX, u32::MAX]);
+        let b = BigUint::new([1, 0, 0, 0]);
         let result = a * b;
         assert_eq!(result.limbs, [u32::MAX, u32::MAX, u32::MAX, u32::MAX]);
     }
 
     #[test]
     fn mul_double() {
-        let a = BigUInt::new([u32::MAX, u32::MAX, 0]);
-        let b = BigUInt::new([2, 0, 0]);
+        let a = BigUint::new([u32::MAX, u32::MAX, 0]);
+        let b = BigUint::new([2, 0, 0]);
         let result = a * b;
         assert_eq!(result.limbs, [u32::MAX - 1, u32::MAX, 1]);
     }
 
     #[test]
     fn mul_single_digit() {
-        let a = BigUInt::new([12345]);
-        let b = BigUInt::new([6789]);
+        let a = BigUint::new([12345]);
+        let b = BigUint::new([6789]);
         let result = a * b;
         assert_eq!(result.limbs, [83810205]);
     }
 
     #[test]
     fn mul_square() {
-        let a = BigUInt::new([u32::MAX, u32::MAX, u32::MAX, 0, 0, 0]);
-        let b = BigUInt::new([u32::MAX, u32::MAX, u32::MAX, 0, 0, 0]);
+        let a = BigUint::new([u32::MAX, u32::MAX, u32::MAX, 0, 0, 0]);
+        let b = BigUint::new([u32::MAX, u32::MAX, u32::MAX, 0, 0, 0]);
         let result = a * b;
         assert_eq!(result.limbs, [1, 0, 0, u32::MAX - 1, u32::MAX, u32::MAX]);
     }
 
     #[test]
     fn mul_triple() {
-        let a = BigUInt::new([u32::MAX / 3, u32::MAX / 3, u32::MAX / 3]);
-        let b = BigUInt::new([3, 0, 0]);
+        let a = BigUint::new([u32::MAX / 3, u32::MAX / 3, u32::MAX / 3]);
+        let b = BigUint::new([3, 0, 0]);
         let result = a * b;
         assert_eq!(result.limbs, [u32::MAX, u32::MAX, u32::MAX]);
     }
@@ -538,22 +574,22 @@ mod tests {
     #[test]
     #[should_panic]
     fn mul_panic_on_overflow() {
-        let a = BigUInt::new([0, 0, 1, 0]);
-        let b = BigUInt::new([0, 0, 1, 0]);
+        let a = BigUint::new([0, 0, 1, 0]);
+        let b = BigUint::new([0, 0, 1, 0]);
         let _ = a * b;
     }
 
     #[test]
     fn mul_max_allowable_mul() {
-        let a = BigUInt::new([u32::MAX, u32::MAX, u32::MAX, 0]);
-        let b = BigUInt::new([0, 1, 0, 0]);
+        let a = BigUint::new([u32::MAX, u32::MAX, u32::MAX, 0]);
+        let b = BigUint::new([0, 1, 0, 0]);
         let result = a * b;
         assert_eq!(result.limbs, [0, u32::MAX, u32::MAX, u32::MAX]);
     }
 
     #[test]
     fn div_u32_by_1() {
-        let a = BigUInt::new([12345, 67890, 54321]);
+        let a = BigUint::new([12345, 67890, 54321]);
         let (quotient, remainder) = a.div_u32(1);
         assert_eq!(quotient.limbs, [12345, 67890, 54321]);
         assert_eq!(remainder, 0);
@@ -561,7 +597,7 @@ mod tests {
 
     #[test]
     fn div_u32_by_larger_number() {
-        let a: BigUInt<4> = BigUInt::from_str_radix("1002045585119561883070521", 10);
+        let a: BigUint<4> = BigUint::from_str_radix("1002045585119561883070521", 10).unwrap();
         let (quotient, remainder) = a.div_u32(u32::MAX);
         assert_eq!(quotient.to_str_radix(10), "233306918608227");
         assert_eq!(remainder, 134556);
@@ -569,7 +605,7 @@ mod tests {
 
     #[test]
     fn div_u32_by_smaller_number() {
-        let a = BigUInt::new([123456789, 987654321]);
+        let a = BigUint::new([123456789, 987654321]);
         let (quotient, remainder) = a.div_u32(12345);
         assert_eq!(quotient.to_str_radix(10), "343616282589837");
         assert_eq!(remainder, 5040);
@@ -577,7 +613,7 @@ mod tests {
 
     #[test]
     fn div_u32_by_power_of_2() {
-        let a = BigUInt::new([123456789, 987654321]);
+        let a = BigUint::new([123456789, 987654321]);
         let (quotient, remainder) = a.div_u32(8);
         assert_eq!(quotient.to_str_radix(10), "530242876071442850");
         assert_eq!(remainder, 5);
@@ -585,7 +621,7 @@ mod tests {
 
     #[test]
     fn div_u32_by_u32_max() {
-        let a = BigUInt::new([u32::MAX, u32::MAX, u32::MAX]);
+        let a = BigUint::new([u32::MAX, u32::MAX, u32::MAX]);
         let (quotient, remainder) = a.div_u32(u32::MAX);
         assert_eq!(quotient.to_str_radix(10), "18446744078004518913");
         assert_eq!(remainder, 0);
@@ -593,7 +629,7 @@ mod tests {
 
     #[test]
     fn div_u32_large_number() {
-        let a = BigUInt::new([0, 0, u32::MAX]);
+        let a = BigUint::new([0, 0, u32::MAX]);
         let (quotient, remainder) = a.div_u32(2);
         assert_eq!(quotient.to_str_radix(10), "39614081247908796759917199360");
         assert_eq!(remainder, 0);
@@ -601,7 +637,7 @@ mod tests {
 
     #[test]
     fn div_u32_with_remainder() {
-        let a = BigUInt::new([1, 2, 3]);
+        let a = BigUint::new([1, 2, 3]);
         let (quotient, remainder) = a.div_u32(2);
         assert_eq!(quotient.limbs, [0, 2147483649, 1]);
         assert_eq!(remainder, 1);
@@ -609,7 +645,7 @@ mod tests {
 
     #[test]
     fn div_u32_complex() {
-        let a = BigUInt::new([1, 1, 1, 1]);
+        let a = BigUint::new([1, 1, 1, 1]);
         let (quotient, remainder) = a.div_u32(2);
         assert_eq!(quotient.limbs, [2147483648, 2147483648, 2147483648, 0]);
         assert_eq!(remainder, 1);
@@ -618,7 +654,7 @@ mod tests {
     #[test]
     fn to_and_from_str_radix_10() {
         let src = "12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849";
-        let num: BigUInt<20> = BigUInt::from_str_radix(src, 10);
+        let num: BigUint<20> = BigUint::from_str_radix(src, 10).unwrap();
         let binding = num.to_str_radix(10);
         let from = binding.as_str();
         assert_eq!(src, from);
@@ -627,7 +663,7 @@ mod tests {
     #[test]
     fn to_and_from_str_max_4096_hex() {
         let src = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
-        let num: BigUInt<128> = BigUInt::from_str_radix(src, 16);
+        let num: BigUint<128> = BigUint::from_str_radix(src, 16).unwrap();
         let binding = num.to_str_radix(16);
         let from = binding.as_str();
         assert_eq!(src, from);
@@ -636,28 +672,28 @@ mod tests {
     #[test]
     #[should_panic]
     fn sub_overflow() {
-        let a = BigUInt::new([0, u32::MAX, u32::MAX]);
-        let b = BigUInt::new([1, u32::MAX, u32::MAX]);
+        let a = BigUint::new([0, u32::MAX, u32::MAX]);
+        let b = BigUint::new([1, u32::MAX, u32::MAX]);
         let result = a - b;
-        assert_eq!(result, BigUInt::default());
+        assert_eq!(result, BigUint::default());
     }
 
     #[test]
     fn sub_to_zero() {
-        let a = BigUInt::new([1, u32::MAX, u32::MAX]);
-        let b = BigUInt::new([1, u32::MAX, u32::MAX]);
+        let a = BigUint::new([1, u32::MAX, u32::MAX]);
+        let b = BigUint::new([1, u32::MAX, u32::MAX]);
         let result = a - b;
-        assert_eq!(result, BigUInt::default());
+        assert_eq!(result, BigUint::default());
     }
 
     #[test]
     fn sub_with_borrow() {
-        let a = BigUInt::new([0, 0, 1]);
-        let b = BigUInt::new([1, 0, 0]);
+        let a = BigUint::new([0, 0, 1]);
+        let b = BigUint::new([1, 0, 0]);
         let result = a - b;
         assert_eq!(
             result,
-            BigUInt {
+            BigUint {
                 limbs: [u32::MAX, u32::MAX, 0]
             }
         );
@@ -665,12 +701,12 @@ mod tests {
 
     #[test]
     fn sub_with_borrow_to_zero() {
-        let a = BigUInt::new([0, 0, 1]);
-        let b = BigUInt::new([1, 1, 0]);
+        let a = BigUint::new([0, 0, 1]);
+        let b = BigUint::new([1, 1, 0]);
         let result = a - b;
         assert_eq!(
             result,
-            BigUInt {
+            BigUint {
                 limbs: [u32::MAX, u32::MAX - 1, 0]
             }
         );
@@ -761,10 +797,10 @@ mod tests {
                 j += 1;
             }
 
-            let big_dividend = BigUInt::new(dividend);
-            let big_divisor = BigUInt::new(divisor);
-            let big_quotient = BigUInt::new(quotient);
-            let big_remainder = BigUInt::new(remainder);
+            let big_dividend = BigUint::new(dividend);
+            let big_divisor = BigUint::new(divisor);
+            let big_quotient = BigUint::new(quotient);
+            let big_remainder = BigUint::new(remainder);
             let (quotient, remainder) = big_dividend.div_rem(big_divisor);
 
             assert_eq!(
@@ -785,31 +821,31 @@ mod tests {
     #[test]
     fn div_nonzero_by_itself() {
         {
-            let a = BigUInt::new([3]);
-            let b = BigUInt::new([3]);
-            let expected_quotient = BigUInt::new([1]);
-            let expected_remainder = BigUInt::new([0]);
+            let a = BigUint::new([3]);
+            let b = BigUint::new([3]);
+            let expected_quotient = BigUint::new([1]);
+            let expected_remainder = BigUint::new([0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([u32::MAX]);
-            let b = BigUInt::new([u32::MAX]);
-            let expected_quotient = BigUInt::new([1]);
-            let expected_remainder = BigUInt::new([0]);
+            let a = BigUint::new([u32::MAX]);
+            let b = BigUint::new([u32::MAX]);
+            let expected_quotient = BigUint::new([1]);
+            let expected_remainder = BigUint::new([0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0x0000ffff, 0x0000ffff]);
-            let b = BigUInt::new([0x0000ffff, 0x0000ffff]);
-            let expected_quotient = BigUInt::new([1, 0]);
-            let expected_remainder = BigUInt::new([0, 0]);
+            let a = BigUint::new([0x0000ffff, 0x0000ffff]);
+            let b = BigUint::new([0x0000ffff, 0x0000ffff]);
+            let expected_quotient = BigUint::new([1, 0]);
+            let expected_remainder = BigUint::new([0, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0x0000789a, 0x0000bcde]);
-            let b = BigUInt::new([0x0000789a, 0x0000bcde]);
-            let expected_quotient = BigUInt::new([1, 0]);
-            let expected_remainder = BigUInt::new([0, 0]);
+            let a = BigUint::new([0x0000789a, 0x0000bcde]);
+            let b = BigUint::new([0x0000789a, 0x0000bcde]);
+            let expected_quotient = BigUint::new([1, 0]);
+            let expected_remainder = BigUint::new([0, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
     }
@@ -817,44 +853,44 @@ mod tests {
     #[test]
     fn div_nonzero_by_1() {
         {
-            let a = BigUInt::new([u32::MAX]);
-            let b = BigUInt::new([1]);
-            let expected_quotient = BigUInt::new([u32::MAX]);
-            let expected_remainder = BigUInt::new([0]);
+            let a = BigUint::new([u32::MAX]);
+            let b = BigUint::new([1]);
+            let expected_quotient = BigUint::new([u32::MAX]);
+            let expected_remainder = BigUint::new([0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([u32::MAX, u32::MAX]);
-            let b = BigUInt::new([1, 0]);
-            let expected_quotient = BigUInt::new([u32::MAX, u32::MAX]);
-            let expected_remainder = BigUInt::new([0, 0]);
+            let a = BigUint::new([u32::MAX, u32::MAX]);
+            let b = BigUint::new([1, 0]);
+            let expected_quotient = BigUint::new([u32::MAX, u32::MAX]);
+            let expected_remainder = BigUint::new([0, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
     }
 
     #[test]
     fn div_dividend_repeats_divisor() {
-        let a = BigUInt::new([u32::MAX, u32::MAX]);
-        let b = BigUInt::new([u32::MAX, 0]);
-        let expected_quotient = BigUInt::new([1, 1]);
-        let expected_remainder = BigUInt::new([0, 0]);
+        let a = BigUint::new([u32::MAX, u32::MAX]);
+        let b = BigUint::new([u32::MAX, 0]);
+        let expected_quotient = BigUint::new([1, 1]);
+        let expected_remainder = BigUint::new([0, 0]);
         assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
     }
 
     #[test]
     fn div_divisor_exceeds_dividend() {
         {
-            let a = BigUInt::new([3]);
-            let b = BigUInt::new([4]);
-            let expected_quotient = BigUInt::new([0]);
-            let expected_remainder = BigUInt::new([3]);
+            let a = BigUint::new([3]);
+            let b = BigUint::new([4]);
+            let expected_quotient = BigUint::new([0]);
+            let expected_remainder = BigUint::new([3]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0x00007899, 0x0000bcde]);
-            let b = BigUInt::new([0x0000789a, 0x0000bcde]);
-            let expected_quotient = BigUInt::new([0, 0]);
-            let expected_remainder = BigUInt::new([0x00007899, 0x0000bcde]);
+            let a = BigUint::new([0x00007899, 0x0000bcde]);
+            let b = BigUint::new([0x0000789a, 0x0000bcde]);
+            let expected_quotient = BigUint::new([0, 0]);
+            let expected_remainder = BigUint::new([0x00007899, 0x0000bcde]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
     }
@@ -862,94 +898,94 @@ mod tests {
     #[test]
     fn div_common_cases() {
         {
-            let a = BigUInt::new([3]);
-            let b = BigUInt::new([2]);
-            let expected_quotient = BigUInt::new([1]);
-            let expected_remainder = BigUInt::new([1]);
+            let a = BigUint::new([3]);
+            let b = BigUint::new([2]);
+            let expected_quotient = BigUint::new([1]);
+            let expected_remainder = BigUint::new([1]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([u32::MAX]);
-            let b = BigUInt::new([3]);
-            let expected_quotient = BigUInt::new([0x55555555]);
-            let expected_remainder = BigUInt::new([0]);
+            let a = BigUint::new([u32::MAX]);
+            let b = BigUint::new([3]);
+            let expected_quotient = BigUint::new([0x55555555]);
+            let expected_remainder = BigUint::new([0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([u32::MAX, u32::MAX - 1]);
-            let b = BigUInt::new([u32::MAX, 0]);
-            let expected_quotient = BigUInt::new([u32::MAX, 0]);
-            let expected_remainder = BigUInt::new([u32::MAX - 1, 0]);
+            let a = BigUint::new([u32::MAX, u32::MAX - 1]);
+            let b = BigUint::new([u32::MAX, 0]);
+            let expected_quotient = BigUint::new([u32::MAX, 0]);
+            let expected_remainder = BigUint::new([u32::MAX - 1, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0x00005678, 0x00001234]);
-            let b = BigUInt::new([0x00009abc, 0]);
-            let expected_quotient = BigUInt::new([0x1e1dba76, 0]);
-            let expected_remainder = BigUInt::new([0x6bd0, 0]);
+            let a = BigUint::new([0x00005678, 0x00001234]);
+            let b = BigUint::new([0x00009abc, 0]);
+            let expected_quotient = BigUint::new([0x1e1dba76, 0]);
+            let expected_remainder = BigUint::new([0x6bd0, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0, 7]);
-            let b = BigUInt::new([0, 3]);
-            let expected_quotient = BigUInt::new([2, 0]);
-            let expected_remainder = BigUInt::new([0, 1]);
+            let a = BigUint::new([0, 7]);
+            let b = BigUint::new([0, 3]);
+            let expected_quotient = BigUint::new([2, 0]);
+            let expected_remainder = BigUint::new([0, 1]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([5, 7]);
-            let b = BigUInt::new([0, 3]);
-            let expected_quotient = BigUInt::new([2, 0]);
-            let expected_remainder = BigUInt::new([5, 1]);
+            let a = BigUint::new([5, 7]);
+            let b = BigUint::new([0, 3]);
+            let expected_quotient = BigUint::new([2, 0]);
+            let expected_remainder = BigUint::new([5, 1]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0, 6]);
-            let b = BigUInt::new([0, 2]);
-            let expected_quotient = BigUInt::new([3, 0]);
-            let expected_remainder = BigUInt::new([0, 0]);
+            let a = BigUint::new([0, 6]);
+            let b = BigUint::new([0, 2]);
+            let expected_quotient = BigUint::new([3, 0]);
+            let expected_remainder = BigUint::new([0, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0x80000000]);
-            let b = BigUInt::new([0x40000001]);
-            let expected_quotient = BigUInt::new([1]);
-            let expected_remainder = BigUInt::new([0x3fffffff]);
+            let a = BigUint::new([0x80000000]);
+            let b = BigUint::new([0x40000001]);
+            let expected_quotient = BigUint::new([1]);
+            let expected_remainder = BigUint::new([0x3fffffff]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0, 0x80000000]);
-            let b = BigUInt::new([0, 0x40000001]);
-            let expected_quotient = BigUInt::new([1, 0]);
-            let expected_remainder = BigUInt::new([0, 0x3fffffff]);
+            let a = BigUint::new([0, 0x80000000]);
+            let b = BigUint::new([0, 0x40000001]);
+            let expected_quotient = BigUint::new([1, 0]);
+            let expected_remainder = BigUint::new([0, 0x3fffffff]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0, 0x80000000]);
-            let b = BigUInt::new([0x00000001, 0x40000000]);
-            let expected_quotient = BigUInt::new([1, 0]);
-            let expected_remainder = BigUInt::new([0xffffffff, 0x3fffffff]);
+            let a = BigUint::new([0, 0x80000000]);
+            let b = BigUint::new([0x00000001, 0x40000000]);
+            let expected_quotient = BigUint::new([1, 0]);
+            let expected_remainder = BigUint::new([0xffffffff, 0x3fffffff]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0x0000789b, 0x0000bcde]);
-            let b = BigUInt::new([0x0000789a, 0x0000bcde]);
-            let expected_quotient = BigUInt::new([1, 0]);
-            let expected_remainder = BigUInt::new([1, 0]);
+            let a = BigUint::new([0x0000789b, 0x0000bcde]);
+            let b = BigUint::new([0x0000789a, 0x0000bcde]);
+            let expected_quotient = BigUint::new([1, 0]);
+            let expected_remainder = BigUint::new([1, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0x0000ffff, 0x0000ffff]);
-            let b = BigUInt::new([0, 1]);
-            let expected_quotient = BigUInt::new([0x0000ffff, 0]);
-            let expected_remainder = BigUInt::new([0x0000ffff, 0]);
+            let a = BigUint::new([0x0000ffff, 0x0000ffff]);
+            let b = BigUint::new([0, 1]);
+            let expected_quotient = BigUint::new([0x0000ffff, 0]);
+            let expected_remainder = BigUint::new([0x0000ffff, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0x000089ab, 0x00004567, 0x00000123]);
-            let b = BigUInt::new([0, 1, 0]);
-            let expected_quotient = BigUInt::new([0x00004567, 0x00000123, 0]);
-            let expected_remainder = BigUInt::new([0x000089ab, 0, 0]);
+            let a = BigUint::new([0x000089ab, 0x00004567, 0x00000123]);
+            let b = BigUint::new([0, 1, 0]);
+            let expected_quotient = BigUint::new([0x00004567, 0x00000123, 0]);
+            let expected_remainder = BigUint::new([0x000089ab, 0, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
     }
@@ -957,10 +993,10 @@ mod tests {
     #[test]
     fn div_q_estimate_exceeds_radix() {
         {
-            let a = BigUInt::new([0x00000000, 0x0000fffe, 0x00008000]);
-            let b = BigUInt::new([0x0000ffff, 0x00008000, 0x00000000]);
-            let expected_quotient = BigUInt::new([0xffffffff, 0x00000000, 0x00000000]);
-            let expected_remainder = BigUInt::new([0x0000ffff, 0x00007fff, 0x00000000]);
+            let a = BigUint::new([0x00000000, 0x0000fffe, 0x00008000]);
+            let b = BigUint::new([0x0000ffff, 0x00008000, 0x00000000]);
+            let expected_quotient = BigUint::new([0xffffffff, 0x00000000, 0x00000000]);
+            let expected_remainder = BigUint::new([0x0000ffff, 0x00007fff, 0x00000000]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
     }
@@ -968,24 +1004,24 @@ mod tests {
     #[test]
     fn div_q_estimate_off_by_one() {
         {
-            let a = BigUInt::new([0x00000003, 0x00000000, 0x80000000, 0]);
-            let b = BigUInt::new([0x00000001, 0x00000000, 0x20000000, 0]);
-            let expected_quotient = BigUInt::new([0x00000003, 0, 0, 0]);
-            let expected_remainder = BigUInt::new([0, 0, 0x20000000, 0]);
+            let a = BigUint::new([0x00000003, 0x00000000, 0x80000000, 0]);
+            let b = BigUint::new([0x00000001, 0x00000000, 0x20000000, 0]);
+            let expected_quotient = BigUint::new([0x00000003, 0, 0, 0]);
+            let expected_remainder = BigUint::new([0, 0, 0x20000000, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0x00000003, 0x00000000, 0x00008000, 0]);
-            let b = BigUInt::new([0x00000001, 0x00000000, 0x00002000, 0]);
-            let expected_quotient = BigUInt::new([0x00000003, 0, 0, 0]);
-            let expected_remainder = BigUInt::new([0, 0, 0x00002000, 0]);
+            let a = BigUint::new([0x00000003, 0x00000000, 0x00008000, 0]);
+            let b = BigUint::new([0x00000001, 0x00000000, 0x00002000, 0]);
+            let expected_quotient = BigUint::new([0x00000003, 0, 0, 0]);
+            let expected_remainder = BigUint::new([0, 0, 0x00002000, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0, 0, 0x00008000, 0x00007fff]);
-            let b = BigUInt::new([1, 0, 0x00008000, 0]);
-            let expected_quotient = BigUInt::new([0xfffe0000, 0, 0, 0]);
-            let expected_remainder = BigUInt::new([0x00020000, 0xffffffff, 0x00007fff, 0]);
+            let a = BigUint::new([0, 0, 0x00008000, 0x00007fff]);
+            let b = BigUint::new([1, 0, 0x00008000, 0]);
+            let expected_quotient = BigUint::new([0xfffe0000, 0, 0, 0]);
+            let expected_remainder = BigUint::new([0x00020000, 0xffffffff, 0x00007fff, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
     }
@@ -993,24 +1029,24 @@ mod tests {
     #[test]
     fn div_mul_and_sub_cannot_be_signed() {
         {
-            let a = BigUInt::new([0, 0x0000fffe, 0, 0x00008000]);
-            let b = BigUInt::new([0x0000ffff, 0, 0x00008000, 0]);
-            let expected_quotient = BigUInt::new([0xffffffff, 0, 0, 0]);
-            let expected_remainder = BigUInt::new([0x0000ffff, 0xffffffff, 0x00007fff, 0]);
+            let a = BigUint::new([0, 0x0000fffe, 0, 0x00008000]);
+            let b = BigUint::new([0x0000ffff, 0, 0x00008000, 0]);
+            let expected_quotient = BigUint::new([0xffffffff, 0, 0, 0]);
+            let expected_remainder = BigUint::new([0x0000ffff, 0xffffffff, 0x00007fff, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0, 0xfffffffe, 0, 0x80000000]);
-            let b = BigUInt::new([0x0000ffff, 0, 0x80000000, 0]);
-            let expected_quotient = BigUInt::new([0x00000000, 1, 0, 0]);
-            let expected_remainder = BigUInt::new([0x00000000, 0xfffeffff, 0x00000000, 0]);
+            let a = BigUint::new([0, 0xfffffffe, 0, 0x80000000]);
+            let b = BigUint::new([0x0000ffff, 0, 0x80000000, 0]);
+            let expected_quotient = BigUint::new([0x00000000, 1, 0, 0]);
+            let expected_remainder = BigUint::new([0x00000000, 0xfffeffff, 0x00000000, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
         {
-            let a = BigUInt::new([0, 0xfffffffe, 0, 0x80000000]);
-            let b = BigUInt::new([0xffffffff, 0, 0x80000000, 0]);
-            let expected_quotient = BigUInt::new([0xffffffff, 0, 0, 0]);
-            let expected_remainder = BigUInt::new([0xffffffff, 0xffffffff, 0x7fffffff, 0]);
+            let a = BigUint::new([0, 0xfffffffe, 0, 0x80000000]);
+            let b = BigUint::new([0xffffffff, 0, 0x80000000, 0]);
+            let expected_quotient = BigUint::new([0xffffffff, 0, 0, 0]);
+            let expected_remainder = BigUint::new([0xffffffff, 0xffffffff, 0x7fffffff, 0]);
             assert_eq!((expected_quotient, expected_remainder), a.div_rem(b));
         }
     }
