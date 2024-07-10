@@ -3,53 +3,52 @@ use numeric::{FromBeBytes, Narrow, ToBeBytes, Widen};
 
 pub const RADIX: u64 = u32::MAX as u64 + 1;
 
+pub type U192 = BigUint<6>;
 pub type U256 = BigUint<8>;
+pub type U384 = BigUint<12>;
 pub type U512 = BigUint<16>;
+pub type U768 = BigUint<24>;
 pub type U1024 = BigUint<32>;
 pub type U2048 = BigUint<64>;
 pub type U4096 = BigUint<128>;
 
 macro_rules! impl_narrow {
-    ($narrow_size: expr) => {
-        impl Narrow for BigUint<{ $narrow_size * 2 }> {
-            type Output = BigUint<$narrow_size>;
+    ($($t:ty)*) => {
+        $(
+            impl Narrow for $t {
+                type Output = BigUint<{<$t>::LIMBS / 2}>;
 
-            fn narrow(&self) -> BigUint<$narrow_size> {
-                let mut limbs = [0; $narrow_size];
-                limbs.clone_from_slice(&self.limbs[..$narrow_size]);
+                fn narrow(&self) -> Self::Output {
+                    let mut limbs = [0; <$t>::LIMBS / 2];
+                    limbs.clone_from_slice(&self.limbs[..(<$t>::LIMBS / 2)]);
 
-                BigUint::new(limbs)
+                    BigUint::new(limbs)
+                }
             }
-        }
+        )*
     };
 }
 
-impl_narrow!(8);
-impl_narrow!(16);
-impl_narrow!(32);
-impl_narrow!(64);
-impl_narrow!(128);
+impl_narrow!(U256 U384 U512 U768 U1024 U2048 U4096);
 
 macro_rules! impl_widen {
-    ($narrow_size: expr) => {
-        impl Widen for BigUint<{ $narrow_size }> {
-            type Output = BigUint<{ $narrow_size * 2 }>;
+    ($($t:ty)*) => {
+        $(
+            impl Widen for $t {
+                type Output = BigUint<{ <$t>::LIMBS * 2 }>;
 
-            fn widen(&self) -> BigUint<{ $narrow_size * 2 }> {
-                let mut limbs = [0; $narrow_size * 2];
-                limbs[..$narrow_size].clone_from_slice(&self.limbs);
+                fn widen(&self) -> Self::Output {
+                    let mut limbs = [0; <$t>::LIMBS * 2];
+                    limbs[..(<$t>::LIMBS)].clone_from_slice(&self.limbs);
 
-                BigUint::new(limbs)
+                    BigUint::new(limbs)
+                }
             }
-        }
+        )*
     };
 }
 
-impl_widen!(4);
-impl_widen!(8);
-impl_widen!(16);
-impl_widen!(32);
-impl_widen!(64);
+impl_widen!(U192 U256 U384 U512 U768 U1024 U2048);
 
 macro_rules! impl_from_be_bytes {
     ($($t:ty)*) => {
@@ -71,7 +70,7 @@ macro_rules! impl_from_be_bytes {
     }
 }
 
-impl_from_be_bytes!(U256 U512 U1024 U2048 U4096);
+impl_from_be_bytes!(U192 U256 U384 U512 U768 U1024 U2048 U4096);
 
 macro_rules! impl_to_be_bytes {
     ($($t:ty)*) => {
@@ -93,4 +92,4 @@ macro_rules! impl_to_be_bytes {
     }
 }
 
-impl_to_be_bytes!(U256 U512 U1024 U2048 U4096);
+impl_to_be_bytes!(U192 U256 U384 U512 U768 U1024 U2048 U4096);

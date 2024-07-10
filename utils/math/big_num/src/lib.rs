@@ -2,12 +2,11 @@
 
 pub mod types;
 
-use core::fmt::{self, LowerHex};
+use core::fmt::{self};
 
 use alloc::string::String;
 use numeric::{
-    Bit, CheckedAdd, CheckedMul, CheckedSub, FromBeBytes, FromStrRadix, LeadingZeros, One,
-    RemEuclid, Zero,
+    Bit, CheckedAdd, CheckedMul, CheckedSub, FromStrRadix, LeadingZeros, One, RemEuclid, Zero,
 };
 use types::RADIX;
 extern crate alloc;
