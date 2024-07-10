@@ -2,14 +2,14 @@ extern crate wasm_bindgen;
 
 use core::array::TryFromSliceError;
 
-use alloc::{boxed::Box, string::String, vec::Vec};
-use big_num::{types::U256, types::U384, BigUint};
+use alloc::boxed::Box;
+use big_num::{types::U256, types::U384, types::U640, BigUint};
 use elliptic_curve::Point;
 use numeric::{FromBeBytes, ToBeBytes};
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    configs::{P256, P384},
+    configs::{p521::P521, P256, P384},
     Ecdsa,
 };
 
@@ -121,3 +121,4 @@ macro_rules! impl_ecdsa {
 
 impl_ecdsa!(EcdsaP256, P256, U256);
 impl_ecdsa!(EcdsaP384, P384, U384);
+impl_ecdsa!(EcdsaP521, P521, U640);

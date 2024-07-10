@@ -5,10 +5,13 @@ pub const RADIX: u64 = u32::MAX as u64 + 1;
 
 pub type U192 = BigUint<6>;
 pub type U256 = BigUint<8>;
+pub type U320 = BigUint<10>;
 pub type U384 = BigUint<12>;
 pub type U512 = BigUint<16>;
+pub type U640 = BigUint<20>;
 pub type U768 = BigUint<24>;
 pub type U1024 = BigUint<32>;
+pub type U1280 = BigUint<40>;
 pub type U2048 = BigUint<64>;
 pub type U4096 = BigUint<128>;
 
@@ -29,7 +32,7 @@ macro_rules! impl_narrow {
     };
 }
 
-impl_narrow!(U256 U384 U512 U768 U1024 U2048 U4096);
+impl_narrow!(U192 U256 U320 U384 U512 U640 U768 U1024 U1280 U2048 U4096);
 
 macro_rules! impl_widen {
     ($($t:ty)*) => {
@@ -48,7 +51,7 @@ macro_rules! impl_widen {
     };
 }
 
-impl_widen!(U192 U256 U384 U512 U768 U1024 U2048);
+impl_widen!(U192 U256 U320 U384 U512 U640 U768 U1024 U1280 U2048 U4096);
 
 macro_rules! impl_from_be_bytes {
     ($($t:ty)*) => {
@@ -70,7 +73,7 @@ macro_rules! impl_from_be_bytes {
     }
 }
 
-impl_from_be_bytes!(U192 U256 U384 U512 U768 U1024 U2048 U4096);
+impl_from_be_bytes!(U192 U256 U320 U384 U512 U640 U768 U1024 U1280 U2048 U4096);
 
 macro_rules! impl_to_be_bytes {
     ($($t:ty)*) => {
@@ -92,4 +95,4 @@ macro_rules! impl_to_be_bytes {
     }
 }
 
-impl_to_be_bytes!(U192 U256 U384 U512 U768 U1024 U2048 U4096);
+impl_to_be_bytes!(U192 U256 U320 U384 U512 U640 U768 U1024 U1280 U2048 U4096);

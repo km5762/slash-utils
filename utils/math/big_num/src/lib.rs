@@ -314,7 +314,11 @@ impl<const N: usize> core::ops::Div for BigUint<N> {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
-        self.div_rem(rhs).0
+        if rhs > self {
+            BigUint::default()
+        } else {
+            self.div_rem(rhs).0
+        }
     }
 }
 
@@ -322,7 +326,11 @@ impl<const N: usize> core::ops::Rem for BigUint<N> {
     type Output = Self;
 
     fn rem(self, rhs: Self) -> Self::Output {
-        self.div_rem(rhs).1
+        if rhs > self {
+            self
+        } else {
+            self.div_rem(rhs).1
+        }
     }
 }
 
