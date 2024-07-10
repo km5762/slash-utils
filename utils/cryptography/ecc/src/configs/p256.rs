@@ -22,13 +22,12 @@ pub const P256: Config<BigUint<8>> = Config {
     n: BigUint::new([
         4234356049, 4089039554, 2803342980, 3169254061, 4294967295, 4294967295, 0, 4294967295,
     ]),
+    _private: (),
 };
 
 #[cfg(test)]
 mod tests {
-    use big_num::BigUint;
-
-    use crate::{configs::tests::SignTest, test_point_generation, test_sign, Signature};
+    use crate::{configs::tests::SignTest, test_point_generation, test_sign};
 
     use super::*;
 
@@ -116,51 +115,66 @@ mod tests {
 
     #[test]
     fn sign_p256() {
+        let private_key = "C9AFA9D845BA75166B5C215767B1D6934E50C3DB36E89B127B8A622B120F6721";
+        let public_key = (
+            "60FED4BA255A9D31C961EB74C6356D68C049B8923B61FA6CE669622E60F29FB6",
+            "7903FE1008B8BC99A41AE9E95628BC64F2F1B20C2D7E9F5177A3C294D4462299",
+        );
+
         test_sign!(SignTest {
             config: P256,
-            private_key: "C9AFA9D845BA75166B5C215767B1D6934E50C3DB36E89B127B8A622B120F6721",
-            public_key: PublicKey::new(
-                "60FED4BA255A9D31C961EB74C6356D68C049B8923B61FA6CE669622E60F29FB6",
-                "7903FE1008B8BC99A41AE9E95628BC64F2F1B20C2D7E9F5177A3C294D4462299"
-            ),
+            private_key,
+            public_key,
             k: "882905F1227FD620FBF2ABF21244F0BA83D0DC3A9103DBBEE43A1FB858109DB4",
             hash: "8151325dcdbae9e0ff95f9f9658432dbedfdb209",
-            signature: Signature::new(
+            signature: (
                 "61340C88C3AAEBEB4F6D667F672CA9759A6CCAA9FA8811313039EE4A35471D32",
                 "6D7F147DAC089441BB2E2FE8F7A3FA264B9C475098FDCF6E00D7C996E1B8B7EB"
             )
         });
-        // test_sign!(SignTest {
-        //     config: P256,
-        //     private_key: "C9AFA9D845BA75166B5C215767B1D6934E50C3DB36E89B127B8A622B120F6721",
-        //     k: "103F90EE9DC52E5E7FB5132B7033C63066D194321491862059967C715985D473",
-        //     hash: "9003e374bc726550c2c289447fd0533160f875709386dfa377bfd41c",
-        //     r: "53B2FFF5D1752B2C689DF257C04C40A587FABABB3F6FC2702F1343AF7CA9AA3F",
-        //     s: "B9AFB64FDC03DC1A131C7D2386D11E349F070AA432A4ACC918BEA988BF75C74C",
-        // });
-        // test_sign!(SignTest {
-        //     config: P256,
-        //     private_key: "C9AFA9D845BA75166B5C215767B1D6934E50C3DB36E89B127B8A622B120F6721",
-        //     k: "A6E3C57DD01ABE90086538398355DD4C3B17AA873382B0F24D6129493D8AAD60",
-        //     hash: "af2bdbe1aa9b6ec1e2ade1d694f41fc71a831d0268e9891562113d8a62add1bf",
-        //     r: "EFD48B2AACB6A8FD1140DD9CD45E81D69D2C877B56AAF991C34D0EA84EAF3716",
-        //     s: "F7CB1C942D657C41D436C7A1B6E29F65F3E900DBB9AFF4064DC4AB2F843ACDA8",
-        // });
-        // test_sign!(SignTest {
-        //     config: P256,
-        //     private_key: "C9AFA9D845BA75166B5C215767B1D6934E50C3DB36E89B127B8A622B120F6721",
-        //     k: "09F634B188CEFD98E7EC88B1AA9852D734D0BC272F7D2A47DECC6EBEB375AAD4",
-        //     hash: "9a9083505bc92276aec4be312696ef7bf3bf603f4bbd381196a029f340585312",
-        //     r: "EAFEA039B20E9B42309FB1D89E213057CBF973DC0CFC8F129EDDDC800EF7719",
-        //     s: "4861F0491E6998B9455193E34E7B0D284DDD7149A74B95B9261F13ABDE940954",
-        // });
-        // test_sign!(SignTest {
-        //     config: P256,
-        //     private_key: "C9AFA9D845BA75166B5C215767B1D6934E50C3DB36E89B127B8A622B120F6721",
-        //     k: "5FA81C63109BADB88C1F367B47DA606DA28CAD69AA22C4FE6AD7DF73A7173AA5",
-        //     hash: "39a5e04aaff7455d9850c605364f514c11324ce64016960d23d5dc57d3ffd8f4",
-        //     r: "8496A60B5E9B47C825488827E0495B0E3FA109EC4568FD3F8D1097678EB97F00",
-        //     s: "2362AB1ADBE2B8ADF9CB9EDAB740EA6049C028114F2460F96554F61FAE3302FE",
-        // });
+        test_sign!(SignTest {
+            config: P256,
+            private_key,
+            public_key,
+            k: "103F90EE9DC52E5E7FB5132B7033C63066D194321491862059967C715985D473",
+            hash: "9003e374bc726550c2c289447fd0533160f875709386dfa377bfd41c",
+            signature: (
+                "53B2FFF5D1752B2C689DF257C04C40A587FABABB3F6FC2702F1343AF7CA9AA3F",
+                "B9AFB64FDC03DC1A131C7D2386D11E349F070AA432A4ACC918BEA988BF75C74C",
+            )
+        });
+        test_sign!(SignTest {
+            config: P256,
+            private_key,
+            public_key,
+            k: "A6E3C57DD01ABE90086538398355DD4C3B17AA873382B0F24D6129493D8AAD60",
+            hash: "af2bdbe1aa9b6ec1e2ade1d694f41fc71a831d0268e9891562113d8a62add1bf",
+            signature: (
+                "EFD48B2AACB6A8FD1140DD9CD45E81D69D2C877B56AAF991C34D0EA84EAF3716",
+                "F7CB1C942D657C41D436C7A1B6E29F65F3E900DBB9AFF4064DC4AB2F843ACDA8"
+            )
+        });
+        test_sign!(SignTest {
+            config: P256,
+            private_key,
+            public_key,
+            k: "09F634B188CEFD98E7EC88B1AA9852D734D0BC272F7D2A47DECC6EBEB375AAD4",
+            hash: "9a9083505bc92276aec4be312696ef7bf3bf603f4bbd381196a029f340585312",
+            signature: (
+                "EAFEA039B20E9B42309FB1D89E213057CBF973DC0CFC8F129EDDDC800EF7719",
+                "4861F0491E6998B9455193E34E7B0D284DDD7149A74B95B9261F13ABDE940954"
+            )
+        });
+        test_sign!(SignTest {
+            config: P256,
+            private_key,
+            public_key,
+            k: "5FA81C63109BADB88C1F367B47DA606DA28CAD69AA22C4FE6AD7DF73A7173AA5",
+            hash: "39a5e04aaff7455d9850c605364f514c11324ce64016960d23d5dc57d3ffd8f4",
+            signature: (
+                "8496A60B5E9B47C825488827E0495B0E3FA109EC4568FD3F8D1097678EB97F00",
+                "2362AB1ADBE2B8ADF9CB9EDAB740EA6049C028114F2460F96554F61FAE3302FE"
+            )
+        });
     }
 }

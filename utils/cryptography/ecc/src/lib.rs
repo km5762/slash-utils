@@ -1,19 +1,24 @@
 #![no_std]
 
 pub mod configs;
-pub mod errors;
 pub mod wasm_adapter;
 
 extern crate alloc;
 
 use configs::Config;
 use elliptic_curve::{Curve, Numeric, Point};
-use errors::{InvalidGeneratorError, InvalidPointError, NoInvKError, SigningError, ZeroingKError};
 use modular::{Ring, Widened};
 use numeric::Widen;
 
 pub struct Ecdsa<T> {
     config: Config<T>,
+}
+
+#[derive(Debug)]
+pub enum SigningError {
+    InvalidPoint,
+    NoInvK,
+    ZeroingK,
 }
 
 impl<T: Numeric> Ecdsa<T>
@@ -25,31 +30,25 @@ where
     }
 
     pub fn sign(&self, k: &T, key: &T, hash: &T) -> Result<(T, T), SigningError> {
-        let Config { p, a, b, g, n } = &self.config;
+        let Config { p, a, b, g, n, .. } = &self.config;
 
         let curve = Curve::new(*a, *b, *p);
         let ring = Ring::new(*n);
 
-        if !curve.is_valid_point(&g) {
-            return Err(errors::SigningError::InvalidGenerator(
-                InvalidGeneratorError,
-            ));
-        }
-
         let point = match curve.mul(&g, *k) {
             Some(p) => p,
-            None => return Err(errors::SigningError::InvalidPoint(InvalidPointError)),
+            None => return Err(SigningError::InvalidPoint),
         };
 
         let r = point.x;
 
         if r == T::zero() {
-            return Err(errors::SigningError::ZeroingK(ZeroingKError));
+            return Err(SigningError::ZeroingK);
         }
 
         let k_inv = match ring.inv(*k) {
             Some(inv) => inv,
-            None => return Err(errors::SigningError::NoInvK(NoInvKError)),
+            None => return Err(SigningError::NoInvK),
         };
 
         let s = ring.mul(k_inv, ring.add(*hash, ring.mul(r, *key)));
@@ -57,16 +56,17 @@ where
         Ok((r, s))
     }
 
-    pub fn verify(&self, key: &Point<T>, hash: &T, signature: &(T, T)) -> Result<(), ()> {
-        let Config { p: _, a, b, g, n } = &self.config;
-        let curve = Curve::new(*a, *b, *n);
+    pub fn verify(&self, key: &Point<T>, hash: &T, signature: &(T, T)) -> bool {
+        let Config { p, a, b, g, n, .. } = &self.config;
+
+        let curve = Curve::new(*a, *b, *p);
         let ring = Ring::new(*n);
 
         let (r, s) = *signature;
 
         let s_inv = match ring.inv(s) {
             Some(inv) => inv,
-            None => return Err(()),
+            None => return false,
         };
 
         let u1 = ring.mul(*hash, s_inv);
@@ -74,23 +74,23 @@ where
 
         let point1 = match curve.mul(g, u1) {
             Some(point) => point,
-            None => return Err(()),
+            None => return false,
         };
 
         let point2 = match curve.mul(key, u2) {
             Some(point) => point,
-            None => return Err(()),
+            None => return false,
         };
 
         let random_point = match curve.add(&point1, &point2) {
             Some(point) => point,
-            None => return Err(()),
+            None => return false,
         };
 
         if r == random_point.x {
-            Ok(())
+            true
         } else {
-            Err(())
+            false
         }
     }
 }

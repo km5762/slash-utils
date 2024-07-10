@@ -1,9 +1,10 @@
 pub mod p256;
 
 use alloc::{format, string::String};
-use big_num::BigUInt;
-use elliptic_curve::Point;
-use numeric::FromStrRadix;
+use big_num::BigUint;
+use elliptic_curve::{Curve, Numeric, Point};
+use modular::{Ring, Widened};
+use numeric::{FromStrRadix, Widen};
 pub use p256::P256;
 
 pub struct Config<T> {
@@ -12,6 +13,31 @@ pub struct Config<T> {
     pub b: T,
     pub g: Point<T>,
     pub n: T,
+    _private: (),
+}
+
+struct InvalidGenerator;
+
+impl<T: Numeric> Config<T>
+where
+    <T as Widen>::Output: Widened<T>,
+{
+    fn new(p: T, a: T, b: T, g: Point<T>, n: T) -> Result<Self, InvalidGenerator> {
+        let curve = Curve::new(a, b, p);
+
+        if !curve.is_valid_point(&g) {
+            return Err(InvalidGenerator);
+        }
+
+        Ok(Self {
+            p,
+            a,
+            b,
+            g,
+            n,
+            _private: (),
+        })
+    }
 }
 
 fn generate_config<const N: usize>(
@@ -34,7 +60,7 @@ fn generate_config<const N: usize>(
 }
 
 fn generate_big_num_constructor<const N: usize>(s: &str) -> String {
-    let big_num: BigUInt<N> = BigUInt::from_str_radix(s, 16).unwrap();
+    let big_num: BigUint<N> = BigUint::from_str_radix(s, 16).unwrap();
     format!("BigUInt::new({:?})", big_num.to_limbs())
 }
 
@@ -54,8 +80,6 @@ fn gen_p256() {
 
 #[cfg(test)]
 mod tests {
-    use crate::{PublicKey, Signature};
-
     use super::Config;
 
     #[macro_export]
@@ -75,23 +99,37 @@ mod tests {
     pub struct SignTest<'a, T> {
         pub config: Config<T>,
         pub private_key: &'a str,
-        pub public_key: PublicKey,
+        pub public_key: (&'a str, &'a str),
         pub k: &'a str,
         pub hash: &'a str,
-        pub signature: Signature,
+        pub signature: (&'a str, &'a str),
     }
 
     #[macro_export]
     macro_rules! test_sign {
         ($test: expr) => {{
             let ecdsa = crate::Ecdsa::new($test.config);
-            let signature = ecdsa.sign($test.k, $test.private_key, $test.hash).unwrap();
-            assert_eq!($test.signature.r, signature.r.to_uppercase());
-            assert_eq!($test.signature.s, signature.s.to_uppercase());
 
-            assert!(ecdsa
-                .verify($test.signature, $test.public_key, $test.hash)
-                .is_ok())
+            let k = numeric::FromStrRadix::from_str_radix($test.k, 16).unwrap();
+            let private_key = numeric::FromStrRadix::from_str_radix($test.private_key, 16).unwrap();
+            let hash = numeric::FromStrRadix::from_str_radix($test.hash, 16).unwrap();
+
+            let signature = ecdsa.sign(&k, &private_key, &hash).unwrap();
+            assert_eq!(
+                $test.signature.0.to_uppercase(),
+                signature.0.to_str_radix(16).to_uppercase()
+            );
+            assert_eq!(
+                $test.signature.1.to_uppercase(),
+                signature.1.to_str_radix(16).to_uppercase()
+            );
+
+            let public_key = Point::new(
+                numeric::FromStrRadix::from_str_radix($test.public_key.0, 16).unwrap(),
+                numeric::FromStrRadix::from_str_radix($test.public_key.1, 16).unwrap(),
+            );
+
+            assert!(ecdsa.verify(&public_key, &hash, &signature));
         }};
     }
 }
