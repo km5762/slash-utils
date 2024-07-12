@@ -2,11 +2,9 @@ pub mod p256;
 pub mod p384;
 pub mod p521;
 
-use alloc::{format, string::String};
-use big_num::BigUint;
 use elliptic_curve::{Curve, Numeric, Point};
-use modular::{Ring, Widened};
-use numeric::{FromStrRadix, Widen};
+use modular::Widened;
+use numeric::Widen;
 pub use p256::P256;
 pub use p384::P384;
 
@@ -43,26 +41,40 @@ where
     }
 }
 
-fn generate_config<const N: usize>(p: &str, a: &str, b: &str, g: (&str, &str), n: &str) -> String {
-    format!(
-        "Config {{ p: {}, a: {}, b: {}, g: Point::new({}, {}), n: {}, _private: ()}};",
-        generate_big_num_constructor::<N>(p),
-        generate_big_num_constructor::<N>(a),
-        generate_big_num_constructor::<N>(b),
-        generate_big_num_constructor::<N>(g.0),
-        generate_big_num_constructor::<N>(g.1),
-        generate_big_num_constructor::<N>(n)
-    )
-}
+#[cfg(test)]
+mod tests {
+    use alloc::{format, string::String};
+    use big_num::BigUint;
+    use numeric::FromStrRadix;
 
-fn generate_big_num_constructor<const N: usize>(s: &str) -> String {
-    let big_num: BigUint<N> = BigUint::from_str_radix(s, 16).unwrap();
-    format!("BigUint::new({:?})", big_num.to_limbs())
-}
+    use super::Config;
 
-#[test]
-fn gen_p256() {
-    let cfg = generate_config::<20>(
+    fn generate_config<const N: usize>(
+        p: &str,
+        a: &str,
+        b: &str,
+        g: (&str, &str),
+        n: &str,
+    ) -> String {
+        format!(
+            "Config {{ p: {}, a: {}, b: {}, g: Point::new({}, {}), n: {}, _private: ()}};",
+            generate_big_num_constructor::<N>(p),
+            generate_big_num_constructor::<N>(a),
+            generate_big_num_constructor::<N>(b),
+            generate_big_num_constructor::<N>(g.0),
+            generate_big_num_constructor::<N>(g.1),
+            generate_big_num_constructor::<N>(n)
+        )
+    }
+
+    fn generate_big_num_constructor<const N: usize>(s: &str) -> String {
+        let big_num: BigUint<N> = BigUint::from_str_radix(s, 16).unwrap();
+        format!("BigUint::new({:?})", big_num.to_limbs())
+    }
+
+    #[test]
+    fn gen_p256() {
+        let cfg = generate_config::<20>(
         "1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc",
         "51953eb9618e1c9a1f929a21a0b68540eea2da725b99b315f3b8b489918ef109e156193951ec7e937b1652c0bd3bb1bf073573df883d2c34f1ef451fd46b503f00",
@@ -70,12 +82,8 @@ fn gen_p256() {
         "1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa51868783bf2f966b7fcc0148f709a5d03bb5c9b8899c47aebb6fb71e91386409",
     );
 
-    assert_eq!(cfg, "")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Config;
+        assert_eq!(cfg, "")
+    }
 
     #[macro_export]
     macro_rules! test_point_generation {

@@ -62,8 +62,8 @@ macro_rules! impl_from_be_bytes {
                 fn from_be_bytes(bytes: &Self::Bytes) -> Self {
                     let mut limbs = [0u32; <$t>::LIMBS];
 
-                    for i in (0..<$t>::LIMBS).rev() {
-                        limbs[i] = u32::from_be_bytes(bytes[i..i + 4].try_into().unwrap());
+                    for (i, chunk) in bytes.chunks_exact(4).rev().enumerate() {
+                        limbs[i] = u32::from_be_bytes(chunk.try_into().unwrap());
                     }
 
                     Self::new(limbs)

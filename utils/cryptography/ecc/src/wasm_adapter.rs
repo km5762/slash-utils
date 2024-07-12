@@ -2,7 +2,7 @@ extern crate wasm_bindgen;
 
 use core::array::TryFromSliceError;
 
-use alloc::boxed::Box;
+use alloc::{boxed::Box, fmt};
 use big_num::{types::U256, types::U384, types::U640, BigUint};
 use elliptic_curve::Point;
 use numeric::{FromBeBytes, ToBeBytes};
@@ -13,18 +13,36 @@ use crate::{
     Ecdsa,
 };
 
-#[wasm_bindgen]
-pub struct Signature(Box<[u8]>, Box<[u8]>);
+#[wasm_bindgen(getter_with_clone)]
+pub struct Signature {
+    pub r: Box<[u8]>,
+    pub s: Box<[u8]>,
+}
+
+#[wasm_bindgen(getter_with_clone)]
+pub struct PublicKey {
+    pub x: Box<[u8]>,
+    pub y: Box<[u8]>,
+}
 
 #[wasm_bindgen]
-pub struct PublicKey(Box<[u8]>, Box<[u8]>);
-
-#[wasm_bindgen]
+#[derive(Debug)]
 pub enum SigningError {
     BytesLength,
     InvalidPoint,
     NoInvK,
     ZeroingK,
+}
+
+impl fmt::Display for SigningError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            SigningError::BytesLength => write!(f, "Error: Invalid byte length"),
+            SigningError::InvalidPoint => write!(f, "Error: Invalid elliptic curve point"),
+            SigningError::NoInvK => write!(f, "Error: No inverse k value"),
+            SigningError::ZeroingK => write!(f, "Error: Zeroing k value"),
+        }
+    }
 }
 
 impl From<TryFromSliceError> for SigningError {
@@ -34,14 +52,27 @@ impl From<TryFromSliceError> for SigningError {
 }
 
 impl From<crate::SigningError> for SigningError {
-    fn from(_: crate::SigningError) -> Self {
-        todo!()
+    fn from(value: crate::SigningError) -> Self {
+        match value {
+            crate::SigningError::InvalidPoint => SigningError::InvalidPoint,
+            crate::SigningError::NoInvK => SigningError::NoInvK,
+            crate::SigningError::ZeroingK => SigningError::ZeroingK,
+        }
     }
 }
 
 #[wasm_bindgen]
+#[derive(Debug)]
 pub enum VerifyingError {
     BytesLength,
+}
+
+impl fmt::Display for VerifyingError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            VerifyingError::BytesLength => write!(f, "Error: Invalid byte length"),
+        }
+    }
 }
 
 impl From<TryFromSliceError> for VerifyingError {
@@ -77,10 +108,10 @@ macro_rules! impl_ecdsa {
 
                 let (r, s) = self.ecdsa.sign(&k, &key, &hash)?;
 
-                Ok(Signature(
-                    Box::new(r.to_be_bytes()),
-                    Box::new(s.to_be_bytes()),
-                ))
+                Ok(Signature {
+                    r: Box::new(r.to_be_bytes()),
+                    s: Box::new(s.to_be_bytes()),
+                })
             }
 
             pub fn verify(
@@ -89,10 +120,10 @@ macro_rules! impl_ecdsa {
                 hash: &[u8],
                 signature: &Signature,
             ) -> Result<bool, VerifyingError> {
-                let x_box: &[u8] = &key.0;
+                let x_box: &[u8] = &key.x;
                 let x_bytes: [u8; <$t>::BYTES] = x_box.try_into()?;
 
-                let y_box: &[u8] = &key.1;
+                let y_box: &[u8] = &key.y;
                 let y_bytes: [u8; <$t>::BYTES] = y_box.try_into()?;
 
                 let key = Point::new(
@@ -102,10 +133,10 @@ macro_rules! impl_ecdsa {
 
                 let hash = BigUint::from_be_bytes(hash.try_into()?);
 
-                let r_box: &[u8] = &signature.0;
+                let r_box: &[u8] = &signature.r;
                 let r_bytes: [u8; <$t>::BYTES] = r_box.try_into()?;
 
-                let s_box: &[u8] = &signature.1;
+                let s_box: &[u8] = &signature.s;
                 let s_bytes: [u8; <$t>::BYTES] = s_box.try_into()?;
 
                 let signature = (
