@@ -1,14 +1,136 @@
 <script setup lang="ts">
 import TextInput from "@/components/TextInput.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
+import SubmitButton from "@/components/SubmitButton.vue";
 import InfoToolTip from "@/components/InfoToolTip.vue";
 import TextArea from "@/components/TextArea.vue";
+import Dropdown from "@/components/Dropdown.vue";
 import { allIntegers, hex } from "@/utils/filters";
-import { ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
+import {
+  P256,
+  P384,
+  P521,
+  type SigningAlgorithmType,
+  type SigningAlgorithmConfig,
+} from "./signing-algorithms";
+import {
+  EcdsaP256,
+  EcdsaP384,
+  EcdsaP521,
+} from "@utils/cryptography/ecc/pkg/ecc";
+import { HexString } from "@/utils/hex-string";
+import { useIntermediateValuesStore } from "./IntermediateValuesStore";
+import { pinia } from "@/pinia";
 
-const text = ref("");
+type HashAlgorithmType = "SHA-1" | "SHA-256" | "SHA-384" | "SHA-512" | "none";
+
+const intermediateValuesStore = useIntermediateValuesStore(pinia);
+const signingAlgorithmType = ref<SigningAlgorithmType>("custom");
+const hashAlgorithmType = ref<HashAlgorithmType>("none");
+const signingAlgorithmConfig = reactive<SigningAlgorithmConfig>({
+  p: "",
+  a: "",
+  b: "",
+  gx: "",
+  gy: "",
+  n: "",
+});
+const privateKey = ref("");
+const k = ref("");
+const m = ref("");
 const options = ["Sign", "Verify"];
 const selectedOption = ref("Sign");
+
+const signingAlgorithmSelected = computed(
+  () => signingAlgorithmType.value !== "custom"
+);
+const hashAlgorithmSelected = computed(
+  () => hashAlgorithmType.value !== "none"
+);
+
+const handleSigningAlgorithmChange = (event: Event) => {
+  const selectedValue = (event.target as HTMLSelectElement).value;
+  const selectedSigningAlgorithmType = selectedValue as SigningAlgorithmType;
+  signingAlgorithmType.value = selectedSigningAlgorithmType;
+
+  switch (selectedSigningAlgorithmType) {
+    case "P-256":
+      Object.assign(signingAlgorithmConfig, P256);
+      break;
+    case "P-384":
+      Object.assign(signingAlgorithmConfig, P384);
+      break;
+    case "P-521":
+      Object.assign(signingAlgorithmConfig, P521);
+      break;
+    default:
+      Object.assign(signingAlgorithmConfig, {
+        p: "",
+        a: "",
+        b: "",
+        gx: "",
+        gy: "",
+        n: "",
+      });
+  }
+};
+
+const handleHashAlgorithmChange = (event: Event) => {
+  const selectedValue = (event.target as HTMLSelectElement).value;
+  hashAlgorithmType.value = selectedValue as HashAlgorithmType;
+  m.value = "";
+};
+
+async function computeSignature() {
+  let signingAlgorithm;
+  let bytes;
+  switch (signingAlgorithmType.value) {
+    case "P-256":
+      bytes = 32;
+      signingAlgorithm = EcdsaP256.new();
+      break;
+    case "P-384":
+      bytes = 48;
+      signingAlgorithm = EcdsaP384.new();
+      break;
+    case "P-521":
+      bytes = 80;
+      signingAlgorithm = EcdsaP521.new();
+      break;
+    case "custom":
+      bytes = 80;
+  }
+
+  let e = m.value;
+  if (hashAlgorithmSelected.value) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(m.value);
+    const hash = await crypto.subtle.digest(hashAlgorithmType.value, data);
+    e = HexString.fromBytes(new Uint8Array(hash)).string;
+  }
+
+  intermediateValuesStore.e = e;
+
+  const z = e.substring(0, bytes * 2);
+  intermediateValuesStore.z = z;
+
+  let kBytes = new HexString(k.value).toBytes(bytes);
+  let privateKeyBytes = new HexString(privateKey.value).toBytes(bytes);
+  let zBytes = new HexString(z).toBytes(bytes);
+
+  if (kBytes.success && privateKeyBytes.success && zBytes.success) {
+    const signature = signingAlgorithm?.sign(
+      kBytes.result,
+      privateKeyBytes.result,
+      zBytes.result
+    );
+
+    console.log(signature!.r);
+    intermediateValuesStore.r = HexString.fromBytes(signature!.r).string;
+    intermediateValuesStore.s = HexString.fromBytes(signature!.s).string;
+  }
+}
 </script>
 
 <template>
@@ -19,6 +141,38 @@ const selectedOption = ref("Sign");
       :options="options"
       v-model="selectedOption"
     />
+    <div class="flex gap-12">
+      <div>
+        <label for="config">Signing Algorithm</label>
+        <Dropdown
+          @change="handleSigningAlgorithmChange"
+          name="signing-algorithm"
+          class="ml-2"
+          id="config"
+        >
+          <option selected value="custom">Custom</option>
+          <option value="P-256">NIST P-256</option>
+          <option value="P-384">NIST P-384</option>
+          <option value="P-521">NIST P-521</option>
+        </Dropdown>
+      </div>
+      <div>
+        <label for="hash">Hash Algorithm</label>
+        <Dropdown
+          @change="handleHashAlgorithmChange"
+          name="hash"
+          class="ml-2"
+          id="hash"
+        >
+          <option selected value="none">None</option>
+          <option value="SHA-1">SHA-1</option>
+          <option value="SHA-224">SHA-224</option>
+          <option value="SHA-256">SHA-256</option>
+          <option value="SHA-384">SHA-384</option>
+          <option value="SHA-512">SHA-512</option>
+        </Dropdown>
+      </div>
+    </div>
     <form class="flex flex-col gap-2 text-xl">
       <fieldset>
         <legend class="float-left">Curve</legend>
@@ -33,15 +187,38 @@ const selectedOption = ref("Sign");
           ><mo>+</mo
           ><mtext>
             <label for="a" hidden>a</label>
-            <TextInput id="a" v-model="text" :filter="allIntegers" /> </mtext
+            <TextInput
+              :disabled="signingAlgorithmSelected"
+              id="a"
+              v-model="signingAlgorithmConfig.a"
+              :filter="hex"
+            /> </mtext
           ><mi>x</mi><mo>+</mo
           ><mtext>
             <label for="b" hidden>b</label>
-            <TextInput id="b" v-model="text" :filter="allIntegers" /></mtext
-        ></math>
+            <TextInput
+              :disabled="signingAlgorithmSelected"
+              id="b"
+              v-model="signingAlgorithmConfig.b"
+              :filter="hex"
+          /></mtext>
+        </math>
       </fieldset>
+      <div>
+        <label for="p">Modulus(p)</label>
+        <InfoToolTip class="inline-block"
+          >The integer order of the subgroup of elliptic curve
+          points</InfoToolTip
+        >
+        <TextInput
+          :disabled="signingAlgorithmSelected"
+          id="p"
+          v-model="signingAlgorithmConfig.p"
+          :filter="hex"
+        />
+      </div>
       <fieldset>
-        <legend class="float-left">Base Point</legend>
+        <legend class="float-left">Base Point(G)</legend>
         <InfoToolTip class="inline-block"
           >The base point which generates all other elliptic curve points in the
           subgroup</InfoToolTip
@@ -50,36 +227,50 @@ const selectedOption = ref("Sign");
           <span>(</span>
           <label for="base-point-x" hidden>Base Point X</label>
           <TextInput
+            :disabled="signingAlgorithmSelected"
             class="inline"
             id="base-point-x"
-            v-model="text"
-            :filter="allIntegers"
+            v-model="signingAlgorithmConfig.gx"
+            :filter="hex"
           />
           <span>,</span>
           <label for="base-point-y" hidden>Base Point Y</label>
           <TextInput
+            :disabled="signingAlgorithmSelected"
             class="inline"
             id="base-point-y"
-            v-model="text"
-            :filter="allIntegers"
+            v-model="signingAlgorithmConfig.gy"
+            :filter="hex"
           />
           <span>)</span>
         </div>
       </fieldset>
       <div>
-        <label for="n">Order</label>
+        <label for="n">Order(n)</label>
         <InfoToolTip class="inline-block"
           >The integer order of the subgroup of elliptic curve
           points</InfoToolTip
         >
-        <TextInput id="n" v-model="text" :filter="allIntegers" />
+        <TextInput
+          :disabled="signingAlgorithmSelected"
+          id="n"
+          v-model="signingAlgorithmConfig.n"
+          :filter="hex"
+        />
       </div>
       <div v-if="selectedOption === 'Sign'">
-        <label for="private-key">Private Key</label>
+        <label for="private-key">Private Key(d)</label>
         <InfoToolTip class="inline-block"
           >The private key of the signer</InfoToolTip
         >
-        <TextInput id="private-key" v-model="text" :filter="allIntegers" />
+        <TextInput id="private-key" v-model="privateKey" :filter="hex" />
+      </div>
+      <div v-if="selectedOption === 'Sign'">
+        <label for="k">Random Seed(k)</label>
+        <InfoToolTip class="inline-block"
+          >The private key of the signer</InfoToolTip
+        >
+        <TextInput id="k" v-model="k" :filter="hex" />
       </div>
       <fieldset v-else>
         <legend class="float-left">Public Key</legend>
@@ -90,31 +281,25 @@ const selectedOption = ref("Sign");
         <div>
           <span>(</span>
           <label for="public-key-x" hidden>Public Key X</label>
-          <TextInput
-            class="inline"
-            id="public-key-x"
-            v-model="text"
-            :filter="allIntegers"
-          />
+          <TextInput class="inline" id="public-key-x" :filter="hex" />
           <span>,</span>
           <label for="public-key-y" hidden>Public Key Y</label>
-          <TextInput
-            class="inline"
-            id="public-key-y"
-            v-model="text"
-            :filter="allIntegers"
-          />
+          <TextInput class="inline" id="public-key-y" :filter="hex" />
           <span>)</span>
         </div>
       </fieldset>
       <div>
-        <label for="message">Message</label>
+        <label for="message">Message(m)</label>
         <InfoToolTip class="inline-block">{{
           selectedOption === "Sign"
             ? "The message to sign"
             : "The message that was signed"
         }}</InfoToolTip>
-        <TextArea id="message" v-model="text" />
+        <TextArea
+          id="message"
+          v-model="m"
+          :filter="hashAlgorithmSelected ? undefined : hex"
+        />
       </div>
       <fieldset v-if="selectedOption === 'Verify'">
         <legend class="float-left">Signature</legend>
@@ -124,13 +309,18 @@ const selectedOption = ref("Sign");
         >
         <div>
           <label class="italic">
-            r:<TextInput class="inline" v-model="text" :filter="allIntegers" />
+            r:<TextInput class="inline" :filter="hex" />
           </label>
           <label class="italic">
-            s:<TextInput class="inline" v-model="text" :filter="allIntegers" />
+            s:<TextInput class="inline" :filter="hex" />
           </label>
         </div>
       </fieldset>
+      <div>
+        <SubmitButton type="button" @click="computeSignature">{{
+          selectedOption.toUpperCase()
+        }}</SubmitButton>
+      </div>
     </form>
   </div>
 </template>

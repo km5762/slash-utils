@@ -36,11 +36,11 @@ where
         let ring = Ring::new(*n);
 
         let point = match curve.mul(&g, *k) {
-            Some(p) => p,
+            Some(point) => point,
             None => return Err(SigningError::InvalidPoint),
         };
 
-        let r = point.x;
+        let r = point.x.rem_euclid(n);
 
         if r == T::zero() {
             return Err(SigningError::ZeroingK);

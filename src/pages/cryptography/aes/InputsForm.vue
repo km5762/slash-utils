@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { toUint32Array, toUint8Array } from "../../../utils/conversions.ts";
+import { toUint32Array } from "../../../utils/conversions.ts";
 import { strip } from "../../../utils/string-formatting.ts";
-import { useEnabledTransformsStore } from "./EnabledTransformsStore.ts";
 import { useIntermediateValuesStore, Mode } from "./IntermediateValuesStore.ts";
 import { onBeforeMount, ref } from "vue";
 import Container from "../../../components/Container.vue";
 import TextArea from "@/components/TextArea.vue";
+import { pinia } from "@/pinia.ts";
 
-const intermediateValuesStore = useIntermediateValuesStore();
+const intermediateValuesStore = useIntermediateValuesStore(pinia);
 </script>
 
 <template>
@@ -17,11 +17,17 @@ const intermediateValuesStore = useIntermediateValuesStore();
       <Container class="w-full max-w-96">
         <label
           >Block:
-          <TextArea v-model="intermediateValuesStore.decryptedBlock" />
+          <TextArea
+            v-model="intermediateValuesStore.decryptedBlock"
+            class="w-full"
+          />
         </label>
         <label
           >Key:
-          <TextArea v-model="intermediateValuesStore.encryptionKey" />
+          <TextArea
+            v-model="intermediateValuesStore.encryptionKey"
+            class="w-full"
+          />
         </label>
         <div class="flex justify-center">
           <button

@@ -3,10 +3,10 @@ import TableRow from "../../../components/TableRow.vue";
 import TableData from "../../../components/TableData.vue";
 import TableHeading from "../../../components/TableHeading.vue";
 import { useIntermediateValuesStore } from "./IntermediateValuesStore";
-import { useEnabledTransformsStore } from "./EnabledTransformsStore";
 import { onBeforeMount } from "vue";
+import { pinia } from "@/pinia";
 
-const intermediateValuesStore = useIntermediateValuesStore();
+const intermediateValuesStore = useIntermediateValuesStore(pinia);
 </script>
 
 <template>

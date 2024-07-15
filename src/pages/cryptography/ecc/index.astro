@@ -2,18 +2,24 @@
 import Layout from "../../../layouts/Layout.astro";
 import Container from "../../../components/Container.vue";
 import InputsForm from "./InputsForm.vue";
+import IntermediateValues from "./IntermediateValues.vue";
 ---
 
 <Layout title="Online ECC Calculator With Intermediate Values">
   <main class="flex flex-col items-center">
     <h1 class="text-7xl font-bold pb-2 text-center">/ECC</h1>
-    <Container>
-        <InputsForm client:load/>
-    </Container>
+    <div class="flex gap-8 flex-wrap justify-center">
+      <Container>
+          <InputsForm client:load/>
+      </Container>
+      <Container>
+        <IntermediateValues client:load/>
+      </Container>
+    </div>
   </main>
 </Layout>
 
 <script>
-  import init from "@utils/cryptography/aes/pkg/aes";
+  import init from "@utils/cryptography/ecc/pkg/ecc";
   init();
 </script>

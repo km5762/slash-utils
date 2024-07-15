@@ -84,8 +84,11 @@ macro_rules! impl_to_be_bytes {
                 fn to_be_bytes(&self) -> Self::Bytes {
                     let mut bytes = [0u8; <$t>::BYTES];
 
-                    for i in 0..<$t>::LIMBS {
-                        bytes[4*i..][..4].copy_from_slice(&self.limbs[i].to_le_bytes());
+                    for (i, &limb) in self.limbs.iter().rev().enumerate() {
+                        let be_bytes = limb.to_be_bytes();
+                        let start = 4 * i;
+                        let end = start + 4;
+                        bytes[start..end].copy_from_slice(&be_bytes);
                     }
 
                     bytes
