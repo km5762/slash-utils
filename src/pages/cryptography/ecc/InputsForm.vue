@@ -15,13 +15,15 @@ import {
   type SigningAlgorithmConfig,
 } from "./signing-algorithms";
 import {
+  EcdsaCustom,
   EcdsaP256,
   EcdsaP384,
   EcdsaP521,
 } from "@utils/cryptography/ecc/pkg/ecc";
-import { HexString } from "@/utils/hex-string";
+import { HexString, HexStringObject } from "@/utils/hex-string";
 import { useIntermediateValuesStore } from "./IntermediateValuesStore";
 import { pinia } from "@/pinia";
+import type { Result } from "@/utils/error-types";
 
 type HashAlgorithmType = "SHA-1" | "SHA-256" | "SHA-384" | "SHA-512" | "none";
 
@@ -48,6 +50,18 @@ const signingAlgorithmSelected = computed(
 const hashAlgorithmSelected = computed(
   () => hashAlgorithmType.value !== "none"
 );
+const maxLength = computed(() => {
+  switch (signingAlgorithmType.value) {
+    case "P-256":
+      return 64;
+    case "P-384":
+      return 96;
+    case "P-521":
+      return 160;
+    case "custom":
+      return 160;
+  }
+});
 
 const handleSigningAlgorithmChange = (event: Event) => {
   const selectedValue = (event.target as HTMLSelectElement).value;
@@ -100,6 +114,12 @@ async function computeSignature() {
       break;
     case "custom":
       bytes = 80;
+      const config = new HexStringObject(signingAlgorithmConfig).toByteObject(
+        bytes
+      );
+      const { p, a, b, gx, gy, n } = config;
+      signingAlgorithm = EcdsaCustom.new(p, a, b, gx, gy, n);
+      break;
   }
 
   let e = m.value;
@@ -119,17 +139,10 @@ async function computeSignature() {
   let privateKeyBytes = new HexString(privateKey.value).toBytes(bytes);
   let zBytes = new HexString(z).toBytes(bytes);
 
-  if (kBytes.success && privateKeyBytes.success && zBytes.success) {
-    const signature = signingAlgorithm?.sign(
-      kBytes.result,
-      privateKeyBytes.result,
-      zBytes.result
-    );
+  const signature = signingAlgorithm.sign(kBytes, privateKeyBytes, zBytes);
 
-    console.log(signature!.r);
-    intermediateValuesStore.r = HexString.fromBytes(signature!.r).string;
-    intermediateValuesStore.s = HexString.fromBytes(signature!.s).string;
-  }
+  intermediateValuesStore.r = HexString.fromBytes(signature.r).string;
+  intermediateValuesStore.s = HexString.fromBytes(signature.s).string;
 }
 </script>
 
@@ -192,6 +205,7 @@ async function computeSignature() {
               id="a"
               v-model="signingAlgorithmConfig.a"
               :filter="hex"
+              :maxLength
             /> </mtext
           ><mi>x</mi><mo>+</mo
           ><mtext>
@@ -201,6 +215,7 @@ async function computeSignature() {
               id="b"
               v-model="signingAlgorithmConfig.b"
               :filter="hex"
+              :maxLength
           /></mtext>
         </math>
       </fieldset>
@@ -215,6 +230,7 @@ async function computeSignature() {
           id="p"
           v-model="signingAlgorithmConfig.p"
           :filter="hex"
+          :maxLength
         />
       </div>
       <fieldset>
@@ -232,6 +248,7 @@ async function computeSignature() {
             id="base-point-x"
             v-model="signingAlgorithmConfig.gx"
             :filter="hex"
+            :maxLength
           />
           <span>,</span>
           <label for="base-point-y" hidden>Base Point Y</label>
@@ -241,6 +258,7 @@ async function computeSignature() {
             id="base-point-y"
             v-model="signingAlgorithmConfig.gy"
             :filter="hex"
+            :maxLength
           />
           <span>)</span>
         </div>
@@ -256,21 +274,27 @@ async function computeSignature() {
           id="n"
           v-model="signingAlgorithmConfig.n"
           :filter="hex"
+          :maxLength
         />
       </div>
       <div v-if="selectedOption === 'Sign'">
-        <label for="private-key">Private Key(d)</label>
+        <label for="private-key">Private Key(d<sub>a</sub>)</label>
         <InfoToolTip class="inline-block"
           >The private key of the signer</InfoToolTip
         >
-        <TextInput id="private-key" v-model="privateKey" :filter="hex" />
+        <TextInput
+          id="private-key"
+          v-model="privateKey"
+          :filter="hex"
+          :maxLength
+        />
       </div>
       <div v-if="selectedOption === 'Sign'">
         <label for="k">Random Seed(k)</label>
         <InfoToolTip class="inline-block"
           >The private key of the signer</InfoToolTip
         >
-        <TextInput id="k" v-model="k" :filter="hex" />
+        <TextInput id="k" v-model="k" :filter="hex" :maxLength />
       </div>
       <fieldset v-else>
         <legend class="float-left">Public Key</legend>
@@ -281,10 +305,20 @@ async function computeSignature() {
         <div>
           <span>(</span>
           <label for="public-key-x" hidden>Public Key X</label>
-          <TextInput class="inline" id="public-key-x" :filter="hex" />
+          <TextInput
+            class="inline"
+            id="public-key-x"
+            :filter="hex"
+            :maxLength
+          />
           <span>,</span>
           <label for="public-key-y" hidden>Public Key Y</label>
-          <TextInput class="inline" id="public-key-y" :filter="hex" />
+          <TextInput
+            class="inline"
+            id="public-key-y"
+            :filter="hex"
+            :maxLength
+          />
           <span>)</span>
         </div>
       </fieldset>

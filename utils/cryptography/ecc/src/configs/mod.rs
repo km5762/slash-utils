@@ -17,17 +17,17 @@ pub struct Config<T> {
     _private: (),
 }
 
-struct InvalidGenerator;
+pub struct InvalidGeneratorError;
 
 impl<T: Numeric> Config<T>
 where
     <T as Widen>::Output: Widened<T>,
 {
-    fn new(p: T, a: T, b: T, g: Point<T>, n: T) -> Result<Self, InvalidGenerator> {
+    pub fn new(p: T, a: T, b: T, g: Point<T>, n: T) -> Result<Self, InvalidGeneratorError> {
         let curve = Curve::new(a, b, p);
 
         if !curve.is_valid_point(&g) {
-            return Err(InvalidGenerator);
+            return Err(InvalidGeneratorError);
         }
 
         Ok(Self {

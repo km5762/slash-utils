@@ -9,20 +9,8 @@ class ParseHexError extends BaseError {
   }
 }
 
-class HexLengthError extends BaseError {
-  constructor(hex: string, length: number, size: number) {
-    super(
-      `given hex string would overflow the length specified for the byte buffer`,
-      {
-        context: { hex, length, size },
-      }
-    );
-  }
-}
-
 export class HexString {
   string: string;
-
   static readonly pattern = /^[0-9a-f]+$/i;
 
   constructor(string: string) {
@@ -34,20 +22,12 @@ export class HexString {
     this.string = stripped;
   }
 
-  toBytes(length: number): Result<Uint8Array, HexLengthError> {
+  toBytes(length: number) {
     return this.#parseInts(length, Uint8Array);
   }
 
-  toWords(length: number): Result<Uint32Array, HexLengthError> {
+  toWords(length: number) {
     return this.#parseInts(length, Uint32Array);
-  }
-
-  concat(string: string) {
-    if (!HexString.pattern.test(string)) {
-      throw new ParseHexError(string);
-    }
-
-    this.string += string;
   }
 
   #parseInts<
@@ -55,23 +35,9 @@ export class HexString {
       | Uint8ArrayConstructor
       | Uint16ArrayConstructor
       | Uint32ArrayConstructor,
-  >(
-    length: number,
-    TypedArrayConstructor: T
-  ): Result<InstanceType<T>, HexLengthError> {
+  >(length: number, TypedArrayConstructor: T): InstanceType<T> {
     const size = TypedArrayConstructor.BYTES_PER_ELEMENT * 8;
     let hex = this.string;
-    const minBits = hex.length * 4;
-    const specifiedBits = length * size;
-
-    if (minBits > specifiedBits) {
-      return { success: false, error: new HexLengthError(hex, length, size) };
-    }
-
-    if (hex.length % 2 !== 0) {
-      hex = "0" + hex;
-    }
-
     let ints = new TypedArrayConstructor(length);
     let hexDigitsPerInt = size / 4;
     let hexIndex = hex.length - hexDigitsPerInt;
@@ -87,7 +53,7 @@ export class HexString {
         break;
       }
     }
-    return { success: true, result: ints as InstanceType<T> };
+    return ints as InstanceType<T>;
   }
 
   static fromBytes(bytes: Uint8Array) {
@@ -106,5 +72,33 @@ export class HexString {
 
   static empty() {
     return new HexString("");
+  }
+}
+
+export class HexStringObject {
+  object: Record<string, HexString>;
+
+  constructor(object: Record<string, string>) {
+    this.object = Object.fromEntries(
+      Object.entries(object).map(([key, value]) => [key, new HexString(value)])
+    );
+  }
+
+  toByteObject(length: number) {
+    return Object.fromEntries(
+      Object.entries(this.object).map(([key, value]) => [
+        key,
+        value.toBytes(length),
+      ])
+    );
+  }
+
+  toWordObject(length: number) {
+    return Object.fromEntries(
+      Object.entries(this.object).map(([key, value]) => [
+        key,
+        value.toWords(length),
+      ])
+    );
   }
 }

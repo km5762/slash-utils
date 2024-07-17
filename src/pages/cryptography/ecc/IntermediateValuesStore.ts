@@ -16,10 +16,6 @@ export const useIntermediateValuesStore = defineStore(
     const r = ref("");
     const s = ref("");
 
-    watch(r, () => {
-      console.log(r.value);
-    });
-
     return { e, z, x, y, r, s };
   }
 );
