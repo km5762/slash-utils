@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { toUint32Array } from "../../../utils/conversions.ts";
 import { strip } from "../../../utils/string-formatting.ts";
 import { useIntermediateValuesStore, Mode } from "./IntermediateValuesStore.ts";
 import { onBeforeMount, ref } from "vue";

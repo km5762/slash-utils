@@ -117,7 +117,7 @@ mod tests {
             let private_key = numeric::FromStrRadix::from_str_radix($test.private_key, 16).unwrap();
             let hash = numeric::FromStrRadix::from_str_radix($test.hash, 16).unwrap();
 
-            let signature = ecdsa.sign(&k, &private_key, &hash).unwrap();
+            let signature = ecdsa.sign(&k, &private_key, &hash).unwrap().signature;
             assert_eq!(
                 $test.signature.0.to_uppercase(),
                 signature.0.to_str_radix(16).to_uppercase()

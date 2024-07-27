@@ -21,6 +21,11 @@ pub enum SigningError {
     ZeroingK,
 }
 
+pub struct SigningIntermediateValues<T> {
+    generated_point: Point<T>,
+    signature: (T, T),
+}
+
 impl<T: Numeric> Ecdsa<T>
 where
     <T as Widen>::Output: Widened<T>,
@@ -29,7 +34,12 @@ where
         Self { config }
     }
 
-    pub fn sign(&self, k: &T, key: &T, hash: &T) -> Result<(T, T), SigningError> {
+    pub fn sign(
+        &self,
+        k: &T,
+        key: &T,
+        hash: &T,
+    ) -> Result<SigningIntermediateValues<T>, SigningError> {
         let Config { p, a, b, g, n, .. } = &self.config;
 
         let curve = Curve::new(*a, *b, *p);
@@ -53,7 +63,10 @@ where
 
         let s = ring.mul(k_inv, ring.add(*hash, ring.mul(r, *key)));
 
-        Ok((r, s))
+        Ok(SigningIntermediateValues {
+            generated_point: point,
+            signature: (r, s),
+        })
     }
 
     pub fn verify(&self, key: &Point<T>, hash: &T, signature: &(T, T)) -> bool {

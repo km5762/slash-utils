@@ -12,11 +12,18 @@ use types::RADIX;
 extern crate alloc;
 
 #[derive(Debug)]
-pub struct ParseBigIntError;
+pub enum ParseBigIntError {
+    InvalidChar,
+}
 
 impl fmt::Display for ParseBigIntError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "failed parsing string into integer")
+        match self {
+            ParseBigIntError::InvalidChar => write!(
+                f,
+                "a character was encountered in the string that does not match the given radix"
+            ),
+        }
     }
 }
 
@@ -57,6 +64,10 @@ impl<const N: usize> BigUint<N> {
         limbs[0] = n;
 
         BigUint::new(limbs)
+    }
+
+    pub fn from_be_hex(src: &str) -> Result<Self, ParseBigIntError> {
+        BigUint::from_str_radix(src, 16)
     }
 
     pub fn to_str_radix(&self, radix: u32) -> String {
@@ -272,7 +283,7 @@ impl<const N: usize> FromStrRadix for BigUint<N> {
         for char in src.chars() {
             let digit = match char.to_digit(radix) {
                 Some(digit) => digit,
-                None => return Err(ParseBigIntError),
+                None => return Err(ParseBigIntError::InvalidChar),
             };
             num = num.mul_u32(radix).add_u32(digit);
         }

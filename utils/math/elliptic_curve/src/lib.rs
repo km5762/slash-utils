@@ -8,7 +8,7 @@ pub trait Numeric: modular::Narrowed + From<u8> + Bit + LeadingZeros {}
 
 impl<T> Numeric for T where T: modular::Narrowed + From<u8> + Bit + LeadingZeros {}
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Default)]
 pub struct Point<T> {
     pub x: T,
     pub y: T,

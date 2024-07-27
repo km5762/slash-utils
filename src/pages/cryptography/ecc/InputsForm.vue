@@ -20,8 +20,11 @@ import {
   EcdsaP384,
   EcdsaP521,
 } from "@utils/cryptography/ecc/pkg/ecc";
-import { HexString, HexStringObject } from "@/utils/hex-string";
-import { useIntermediateValuesStore } from "./IntermediateValuesStore";
+import { HexString } from "@/utils/hex-string";
+import {
+  EcdsaParameters,
+  useIntermediateValuesStore,
+} from "./IntermediateValuesStore";
 import { pinia } from "@/pinia";
 import type { Result } from "@/utils/error-types";
 
@@ -114,10 +117,7 @@ async function computeSignature() {
       break;
     case "custom":
       bytes = 80;
-      const config = new HexStringObject(signingAlgorithmConfig).toByteObject(
-        bytes
-      );
-      const { p, a, b, gx, gy, n } = config;
+      const { p, a, b, gx, gy, n } = signingAlgorithmConfig;
       signingAlgorithm = EcdsaCustom.new(p, a, b, gx, gy, n);
       break;
   }
@@ -127,7 +127,7 @@ async function computeSignature() {
     const encoder = new TextEncoder();
     const data = encoder.encode(m.value);
     const hash = await crypto.subtle.digest(hashAlgorithmType.value, data);
-    e = HexString.fromBytes(new Uint8Array(hash)).string;
+    e = HexString.fromBytes(new Uint8Array(hash)).toString();
   }
 
   intermediateValuesStore.e = e;
@@ -135,14 +135,21 @@ async function computeSignature() {
   const z = e.substring(0, bytes * 2);
   intermediateValuesStore.z = z;
 
-  let kBytes = new HexString(k.value).toBytes(bytes);
-  let privateKeyBytes = new HexString(privateKey.value).toBytes(bytes);
-  let zBytes = new HexString(z).toBytes(bytes);
+  const intermediateValues = signingAlgorithm.sign(
+    k.value,
+    privateKey.value,
+    z
+  );
 
-  const signature = signingAlgorithm.sign(kBytes, privateKeyBytes, zBytes);
+  const { generated_point, signature } = intermediateValues;
 
-  intermediateValuesStore.r = HexString.fromBytes(signature.r).string;
-  intermediateValuesStore.s = HexString.fromBytes(signature.s).string;
+  const { x, y } = generated_point;
+  const { r, s } = signature;
+
+  intermediateValuesStore.r = r;
+  intermediateValuesStore.s = s;
+  intermediateValuesStore.x = x;
+  intermediateValuesStore.y = y;
 }
 </script>
 

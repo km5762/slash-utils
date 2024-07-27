@@ -10,7 +10,7 @@ class ParseHexError extends BaseError {
 }
 
 export class HexString {
-  string: string;
+  private string: string;
   static readonly pattern = /^[0-9a-f]+$/i;
 
   constructor(string: string) {
@@ -20,6 +20,10 @@ export class HexString {
     }
 
     this.string = stripped;
+  }
+
+  toString() {
+    return this.string;
   }
 
   toBytes(length: number) {
@@ -34,7 +38,7 @@ export class HexString {
     T extends
       | Uint8ArrayConstructor
       | Uint16ArrayConstructor
-      | Uint32ArrayConstructor,
+      | Uint32ArrayConstructor
   >(length: number, TypedArrayConstructor: T): InstanceType<T> {
     const size = TypedArrayConstructor.BYTES_PER_ELEMENT * 8;
     let hex = this.string;
@@ -64,6 +68,7 @@ export class HexString {
       hex.push((current >>> 4).toString(16));
       hex.push((current & 0xf).toString(16));
     }
+
     let hexString = hex.join("");
     hexString = hexString.replace(/^0+/, "");
 
@@ -72,33 +77,5 @@ export class HexString {
 
   static empty() {
     return new HexString("");
-  }
-}
-
-export class HexStringObject {
-  object: Record<string, HexString>;
-
-  constructor(object: Record<string, string>) {
-    this.object = Object.fromEntries(
-      Object.entries(object).map(([key, value]) => [key, new HexString(value)])
-    );
-  }
-
-  toByteObject(length: number) {
-    return Object.fromEntries(
-      Object.entries(this.object).map(([key, value]) => [
-        key,
-        value.toBytes(length),
-      ])
-    );
-  }
-
-  toWordObject(length: number) {
-    return Object.fromEntries(
-      Object.entries(this.object).map(([key, value]) => [
-        key,
-        value.toWords(length),
-      ])
-    );
   }
 }
