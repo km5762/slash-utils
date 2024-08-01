@@ -40,14 +40,14 @@ impl Sha256 {
         Self { buffer: Vec::new() }
     }
 
-    fn schedule_fn(t: usize, schedule: &[u32]) -> u32 {
+    pub(crate) fn schedule_fn(t: usize, schedule: &[u32]) -> u32 {
         Self::lower_sig1(schedule[t - 2])
             .wrapping_add(schedule[t - 7])
             .wrapping_add(Self::lower_sig0(schedule[t - 15]))
             .wrapping_add(schedule[t - 16])
     }
 
-    fn update_fn(t: usize, working_variables: &mut [u32], schedule: &[u32]) {
+    pub(crate) fn update_fn(t: usize, working_variables: &mut [u32], schedule: &[u32]) {
         let temp1 = working_variables[7]
             .wrapping_add(Self::upper_sig1(working_variables[4]))
             .wrapping_add(ch(
@@ -71,19 +71,6 @@ impl Sha256 {
         working_variables[1] = working_variables[0];
         working_variables[0] = temp1.wrapping_add(temp2);
     }
-
-    pub(crate) fn update_hash(&self, initial_hash: &mut [u32; 8]) {
-        let blocks = parse(&pad::<u32, u64>(&self.buffer));
-        let blocks: Vec<&[u32]> = blocks.iter().map(|block| &block[..]).collect();
-        hash(
-            &blocks,
-            initial_hash,
-            &mut [0u32; 64],
-            &mut [0u32; 8],
-            &Self::schedule_fn,
-            &mut &Self::update_fn,
-        );
-    }
 }
 
 impl HashingAlgorithm for Sha256 {
@@ -106,7 +93,16 @@ impl HashingAlgorithm for Sha256 {
             0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab,
             0x5be0cd19,
         ];
-        self.update_hash(&mut initial_hash);
+        let blocks = parse(&pad::<u32, u64>(&self.buffer));
+        let blocks: Vec<&[u32]> = blocks.iter().map(|block| &block[..]).collect();
+        hash(
+            &blocks,
+            &mut initial_hash,
+            &mut [0u32; 64],
+            &mut [0u32; 8],
+            &Self::schedule_fn,
+            &mut &Self::update_fn,
+        );
         initial_hash
     }
 }

@@ -2,14 +2,15 @@ use alloc::vec::Vec;
 use core::mem::size_of;
 use core::ops::{BitXor, Not};
 use core::{fmt::Debug, ops::BitAnd};
-use numeric::{FromBeBytes, ToBeBytes, WrappingAdd, Zero};
+use numeric::{FromBeBytes, ToBeBytes, Widen, WrappingAdd, Zero};
 
 pub(crate) fn pad<T, U>(buffer: &Vec<u8>) -> Vec<u8>
 where
-    T: TryFrom<usize> + ToBeBytes,
-    T::Error: Debug,
+    T: TryFrom<usize> + ToBeBytes + Widen,
     U: TryFrom<usize> + ToBeBytes,
     U::Error: Debug,
+    <T as Widen>::Output: ToBeBytes,
+    T::Error: Debug,
 {
     let word_bytes = size_of::<T>();
     let block_size = word_bytes * 128;
@@ -23,11 +24,9 @@ where
         zeroes += 8;
     }
 
-    let num = U::try_from(bit_length).unwrap();
-    let binding = (num).to_be_bytes();
-    let slice = binding.as_ref();
+    let bit_length = U::try_from(bit_length).unwrap().to_be_bytes();
 
-    padded_buffer.extend_from_slice(slice);
+    padded_buffer.extend_from_slice(bit_length.as_ref());
     padded_buffer
 }
 

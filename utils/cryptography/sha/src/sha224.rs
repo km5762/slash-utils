@@ -2,21 +2,15 @@ use alloc::vec::Vec;
 
 use crate::{
     sha256::Sha256,
-    sha_core::{ch, hash, maj, pad, parse, HashingAlgorithm},
+    sha_core::{hash, pad, parse, HashingAlgorithm},
 };
 
 pub struct Sha224 {
-    hasher: Sha256,
+    buffer: Vec<u8>,
 }
 
-impl Sha224 {
-    fn test(&self) {
-        Sha256::update_fn(t, working_variables, schedule)
-    }
-}
-
-impl HashingAlgorithm for Sha256 {
-    type Digest = [u32; 8];
+impl HashingAlgorithm for Sha224 {
+    type Digest = [u32; 7];
 
     fn new() -> Self {
         Self { buffer: Vec::new() }
@@ -30,10 +24,10 @@ impl HashingAlgorithm for Sha256 {
         self.buffer.clear();
     }
 
-    fn digest(&self) -> [u32; 8] {
+    fn digest(&self) -> [u32; 7] {
         let mut initial_hash: [u32; 8] = [
-            0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab,
-            0x5be0cd19,
+            0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939, 0xffc00b31, 0x68581511, 0x64f98fa7,
+            0xbefa4fa4,
         ];
         let blocks = parse(&pad::<u32, u64>(&self.buffer));
         let blocks: Vec<&[u32]> = blocks.iter().map(|block| &block[..]).collect();
@@ -42,11 +36,13 @@ impl HashingAlgorithm for Sha256 {
             &mut initial_hash,
             &mut [0u32; 64],
             &mut [0u32; 8],
-            &Self::schedule_fn,
-            &mut &Self::update_fn,
+            &Sha256::schedule_fn,
+            &mut &Sha256::update_fn,
         );
 
-        initial_hash
+        let mut truncated = [0u32; 7];
+        truncated.copy_from_slice(&initial_hash[..7]);
+        truncated
     }
 }
 
@@ -58,48 +54,48 @@ mod tests {
 
     #[test]
     fn test_hash() {
-        test_hashes::<Sha256>(&[
+        test_hashes::<Sha224>(&[
             (
                 b"abc",
                 [
-                    0xba7816bf, 0x8f01cfea, 0x414140de, 0x5dae2223,
-                    0xb00361a3, 0x96177a9c, 0xb410ff61, 0xf20015ad
-                ]
+                    0x23097d22, 0x3405d822, 0x8642a477, 0xbda255b3, 0x2aadbce4, 0xbda0b3f7,
+                    0xe36c9da7,
+                ],
             ),
             (
                 b"",
                 [
-                    0xe3b0c442, 0x98fc1c14, 0x9afbf4c8, 0x996fb924,
-                    0x27ae41e4, 0x649b934c, 0xa495991b, 0x7852b855
-                ]
+                    0xd14a028c, 0x2a3a2bc9, 0x476102bb, 0x288234c4, 0x15a2b01f, 0x828ea62a,
+                    0xc5b3e42f,
+                ],
             ),
             (
                 b"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
                 [
-                    0x248d6a61, 0xd20638b8, 0xe5c02693, 0x0c3e6039,
-                    0xa33ce459, 0x64ff2167, 0xf6ecedd4, 0x19db06c1
-                ]
+                    0x75388b16, 0x512776cc, 0x5dba5da1, 0xfd890150, 0xb0c6455c, 0xb4f58b19,
+                    0x52522525,
+                ],
             ),
             (
                 b"abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu",
                 [
-                    0xcf5b16a7, 0x78af8380, 0x036ce59e, 0x7b049237,
-                    0x0b249b11, 0xe8f07a51, 0xafac4503, 0x7afee9d1
-                ]
+                    0xc97ca9a5, 0x59850ce9, 0x7a04a96d, 0xef6d99a9, 0xe0e0e2ab, 0x14e6b8df,
+                    0x265fc0b3,
+                ],
             ),
             (
                 &b"a".repeat(1_000_000),
                 [
-                    0xcdc76e5c, 0x9914fb92, 0x81a1c7e2, 0x84d73e67,
-                    0xf1809a48, 0xa497200e, 0x046d39cc, 0xc7112cd0
-                ]
+                    0x20794655, 0x980c91d8, 0xbbb4c1ea, 0x97618a4b, 0xf03f4258, 0x1948b2ee,
+                    0x4ee7ad67,
+                ],
             ),
             (
                 &b"abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmno".repeat(16_777_216),
                 [
-                    0x50e72a0e, 0x26442fe2, 0x552dc393, 0x8ac58658,
-                    0x228c0cbf, 0xb1d2ca87, 0x2ae43526, 0x6fcd055e
-                ]
+                    0xb5989713, 0xca4fe47a, 0x009f8621, 0x980b34e6, 0xd63ed306, 0x3b2a0a2c,
+                    0x867d8a85,
+                ],
             ),
         ]);
     }

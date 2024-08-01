@@ -114,14 +114,14 @@ impl Sha512 {
         self.buffer.append(&mut data);
     }
 
-    fn schedule_fn(t: usize, schedule: &[u64]) -> u64 {
+    pub(crate) fn schedule_fn(t: usize, schedule: &[u64]) -> u64 {
         Self::lower_sig1(schedule[t - 2])
             .wrapping_add(schedule[t - 7])
             .wrapping_add(Self::lower_sig0(schedule[t - 15]))
             .wrapping_add(schedule[t - 16])
     }
 
-    fn update_fn(t: usize, working_variables: &mut [u64], schedule: &[u64]) {
+    pub(crate) fn update_fn(t: usize, working_variables: &mut [u64], schedule: &[u64]) {
         let temp1 = working_variables[7]
             .wrapping_add(Self::upper_sig1(working_variables[4]))
             .wrapping_add(ch(
