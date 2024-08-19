@@ -18,6 +18,7 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
         ><mi>m</mi><mo>)</mo></math
       >
       <Container class="mt-2 break-all box-content w-[32ch] h-[4ch]">
+        = {{ intermediateValuesStore.e }}
       </Container>
     </div>
     <div>

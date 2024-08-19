@@ -38,9 +38,7 @@ impl Sha1 {
     }
 }
 
-impl HashingAlgorithm for Sha1 {
-    type Digest = [u32; 5];
-
+impl HashingAlgorithm<u32, 5> for Sha1 {
     fn new() -> Self {
         Self { buffer: Vec::new() }
     }
@@ -53,7 +51,7 @@ impl HashingAlgorithm for Sha1 {
         self.buffer.clear();
     }
 
-    fn digest(&self) -> Self::Digest {
+    fn digest(&self) -> [u32; 5] {
         let blocks = parse::<u32>(&pad::<u32, u64>(&self.buffer));
         let blocks: Vec<&[u32]> = blocks.iter().map(|block| &block[..]).collect();
         let mut initial_hash = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0];
@@ -78,7 +76,7 @@ mod tests {
 
     #[test]
     fn test_hash() {
-        test_hashes::<Sha1>(&[
+        test_hashes::<Sha1, u32, 5>(&[
             (
                 b"abc",
                 [0xa9993e36, 0x4706816a, 0xba3e2571, 0x7850c26c, 0x9cd0d89d],

@@ -98,11 +98,11 @@ where
     (x & y) ^ (x & z) ^ (y & z)
 }
 
-pub trait HashingAlgorithm {
-    type Digest;
-
-    fn new() -> Self;
+pub trait HashingAlgorithm<T, const N: usize> {
+    fn new() -> Self
+    where
+        Self: Sized;
     fn update(&mut self, data: &[u8]);
-    fn digest(&self) -> Self::Digest;
+    fn digest(&self) -> [T; N];
     fn reset(&mut self);
 }

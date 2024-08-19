@@ -8,8 +8,12 @@ elliptic_curve = {path = "../../math/elliptic_curve"}
 modular = {path = "../../math/modular"}
 big_num = {path = "../../math/big_num"}
 numeric = {path = "../../traits/numeric"}
+console_error_panic_hook = "0.1.7"
+sha = {path = "../sha"}
 wasm-bindgen = "0.2.92"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+
 

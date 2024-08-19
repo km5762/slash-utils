@@ -19,20 +19,18 @@ import {
   EcdsaP256,
   EcdsaP384,
   EcdsaP521,
+  HashingAlgorithmType,
 } from "@utils/cryptography/ecc/pkg/ecc";
 import { HexString } from "@/utils/hex-string";
-import {
-  EcdsaParameters,
-  useIntermediateValuesStore,
-} from "./IntermediateValuesStore";
+import { useIntermediateValuesStore } from "./IntermediateValuesStore";
 import { pinia } from "@/pinia";
 import type { Result } from "@/utils/error-types";
 
-type HashAlgorithmType = "SHA-1" | "SHA-256" | "SHA-384" | "SHA-512" | "none";
-
 const intermediateValuesStore = useIntermediateValuesStore(pinia);
 const signingAlgorithmType = ref<SigningAlgorithmType>("custom");
-const hashAlgorithmType = ref<HashAlgorithmType>("none");
+const hashingAlgorithmType = ref<HashingAlgorithmType>(
+  HashingAlgorithmType.None
+);
 const signingAlgorithmConfig = reactive<SigningAlgorithmConfig>({
   p: "",
   a: "",
@@ -50,8 +48,8 @@ const selectedOption = ref("Sign");
 const signingAlgorithmSelected = computed(
   () => signingAlgorithmType.value !== "custom"
 );
-const hashAlgorithmSelected = computed(
-  () => hashAlgorithmType.value !== "none"
+const hashingAlgorithmSelected = computed(
+  () => hashingAlgorithmType.value !== HashingAlgorithmType.None
 );
 const maxLength = computed(() => {
   switch (signingAlgorithmType.value) {
@@ -95,57 +93,64 @@ const handleSigningAlgorithmChange = (event: Event) => {
 
 const handleHashAlgorithmChange = (event: Event) => {
   const selectedValue = (event.target as HTMLSelectElement).value;
-  hashAlgorithmType.value = selectedValue as HashAlgorithmType;
+
+  switch (selectedValue) {
+    case "none":
+      hashingAlgorithmType.value = HashingAlgorithmType.None;
+      break;
+    case "SHA-1":
+      hashingAlgorithmType.value = HashingAlgorithmType.Sha1;
+      break;
+    case "SHA-224":
+      hashingAlgorithmType.value = HashingAlgorithmType.Sha224;
+      break;
+    case "SHA-256":
+      hashingAlgorithmType.value = HashingAlgorithmType.Sha256;
+      break;
+    case "SHA-384":
+      hashingAlgorithmType.value = HashingAlgorithmType.Sha384;
+      break;
+    case "SHA-512":
+      hashingAlgorithmType.value = HashingAlgorithmType.Sha512;
+      break;
+  }
   m.value = "";
 };
 
 async function computeSignature() {
   let signingAlgorithm;
-  let bytes;
   switch (signingAlgorithmType.value) {
     case "P-256":
-      bytes = 32;
       signingAlgorithm = EcdsaP256.new();
       break;
     case "P-384":
-      bytes = 48;
       signingAlgorithm = EcdsaP384.new();
       break;
     case "P-521":
-      bytes = 80;
       signingAlgorithm = EcdsaP521.new();
       break;
     case "custom":
-      bytes = 80;
       const { p, a, b, gx, gy, n } = signingAlgorithmConfig;
       signingAlgorithm = EcdsaCustom.new(p, a, b, gx, gy, n);
       break;
   }
 
-  let e = m.value;
-  if (hashAlgorithmSelected.value) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(m.value);
-    const hash = await crypto.subtle.digest(hashAlgorithmType.value, data);
-    e = HexString.fromBytes(new Uint8Array(hash)).toString();
-  }
-
-  intermediateValuesStore.e = e;
-
-  const z = e.substring(0, bytes * 2);
-  intermediateValuesStore.z = z;
-
+  console.log(k.value, privateKey.value, m.value, hashingAlgorithmType.value);
   const intermediateValues = signingAlgorithm.sign(
     k.value,
     privateKey.value,
-    z
+    m.value,
+    hashingAlgorithmType.value
   );
 
-  const { generated_point, signature } = intermediateValues;
+  const { hash, truncated_hash, generated_point, signature } =
+    intermediateValues;
 
   const { x, y } = generated_point;
   const { r, s } = signature;
 
+  intermediateValuesStore.e = hash;
+  intermediateValuesStore.z = truncated_hash;
   intermediateValuesStore.r = r;
   intermediateValuesStore.s = s;
   intermediateValuesStore.x = x;
@@ -339,7 +344,7 @@ async function computeSignature() {
         <TextArea
           id="message"
           v-model="m"
-          :filter="hashAlgorithmSelected ? undefined : hex"
+          :maxLength="hashingAlgorithmSelected ? undefined : maxLength"
         />
       </div>
       <fieldset v-if="selectedOption === 'Verify'">

@@ -106,14 +106,6 @@ impl Sha512 {
         x.rotate_right(19) ^ x.rotate_right(61) ^ (x >> 6)
     }
 
-    pub fn new() -> Self {
-        Self { buffer: Vec::new() }
-    }
-
-    pub fn update(&mut self, mut data: Vec<u8>) {
-        self.buffer.append(&mut data);
-    }
-
     pub(crate) fn schedule_fn(t: usize, schedule: &[u64]) -> u64 {
         Self::lower_sig1(schedule[t - 2])
             .wrapping_add(schedule[t - 7])
@@ -147,9 +139,7 @@ impl Sha512 {
     }
 }
 
-impl HashingAlgorithm for Sha512 {
-    type Digest = [u64; 8];
-
+impl HashingAlgorithm<u64, 8> for Sha512 {
     fn new() -> Self {
         Self { buffer: Vec::new() }
     }
@@ -196,7 +186,7 @@ mod tests {
 
     #[test]
     fn test_hash() {
-        test_hashes::<Sha512>(&[
+        test_hashes::<Sha512, u64, 8>(&[
             (
                 b"abc",
                 [

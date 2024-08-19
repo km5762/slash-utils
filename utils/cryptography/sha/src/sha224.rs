@@ -9,9 +9,7 @@ pub struct Sha224 {
     buffer: Vec<u8>,
 }
 
-impl HashingAlgorithm for Sha224 {
-    type Digest = [u32; 7];
-
+impl HashingAlgorithm<u32, 7> for Sha224 {
     fn new() -> Self {
         Self { buffer: Vec::new() }
     }
@@ -54,7 +52,7 @@ mod tests {
 
     #[test]
     fn test_hash() {
-        test_hashes::<Sha224>(&[
+        test_hashes::<Sha224, u32, 7>(&[
             (
                 b"abc",
                 [

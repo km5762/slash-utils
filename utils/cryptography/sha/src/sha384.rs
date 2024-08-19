@@ -9,19 +9,7 @@ pub struct Sha384 {
     buffer: Vec<u8>,
 }
 
-impl Sha384 {
-    pub fn new() -> Self {
-        Self { buffer: Vec::new() }
-    }
-
-    pub fn update(&mut self, mut data: Vec<u8>) {
-        self.buffer.append(&mut data);
-    }
-}
-
-impl HashingAlgorithm for Sha384 {
-    type Digest = [u64; 5];
-
+impl HashingAlgorithm<u64, 5> for Sha384 {
     fn new() -> Self {
         Self { buffer: Vec::new() }
     }
@@ -76,7 +64,7 @@ mod tests {
 
     #[test]
     fn test_hash() {
-        test_hashes::<Sha384>(&[
+        test_hashes::<Sha384, u64, 5>(&[
             (
                 b"abc",
                 [

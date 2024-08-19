@@ -120,7 +120,7 @@ impl_from_be_bytes! {
 }
 
 pub trait ToBeBytes {
-    type Bytes;
+    type Bytes: AsRef<[u8]>;
 
     fn to_be_bytes(&self) -> Self::Bytes;
 }

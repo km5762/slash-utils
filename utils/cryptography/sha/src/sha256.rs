@@ -36,10 +36,6 @@ impl Sha256 {
         x.rotate_right(17) ^ x.rotate_right(19) ^ (x >> 10)
     }
 
-    pub fn new() -> Self {
-        Self { buffer: Vec::new() }
-    }
-
     pub(crate) fn schedule_fn(t: usize, schedule: &[u32]) -> u32 {
         Self::lower_sig1(schedule[t - 2])
             .wrapping_add(schedule[t - 7])
@@ -73,9 +69,7 @@ impl Sha256 {
     }
 }
 
-impl HashingAlgorithm for Sha256 {
-    type Digest = [u32; 8];
-
+impl HashingAlgorithm<u32, 8> for Sha256 {
     fn new() -> Self {
         Self { buffer: Vec::new() }
     }
@@ -115,7 +109,7 @@ mod tests {
 
     #[test]
     fn test_hash() {
-        test_hashes::<Sha256>(&[
+        test_hashes::<Sha256, u32, 8>(&[
             (
                 b"abc",
                 [
