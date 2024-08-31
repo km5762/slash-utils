@@ -5,8 +5,7 @@ use core::{array::TryFromSliceError, cmp::min, fmt::LowerHex};
 
 use alloc::{boxed::Box, format, string::String, vec::Vec};
 use big_num::{
-    types::{U256, U384, U640},
-    BigUint, ParseBigIntError,
+    types::{U256, U384, U640}, ParseBigIntError,
 };
 use elliptic_curve::{Numeric, Point};
 use modular::Widened;
@@ -69,7 +68,7 @@ impl From<crate::SigningError> for SigningError {
 
 #[wasm_bindgen]
 pub enum EcdsaCustomError {
-    ParseBigIntError,
+    ParseBigInt,
     InvalidGenerator,
 }
 
@@ -81,18 +80,25 @@ impl From<InvalidGeneratorError> for EcdsaCustomError {
 
 impl From<ParseBigIntError> for EcdsaCustomError {
     fn from(_: ParseBigIntError) -> Self {
-        EcdsaCustomError::ParseBigIntError
+        EcdsaCustomError::ParseBigInt
     }
 }
 
 #[wasm_bindgen]
 pub enum VerifyingError {
-    ParseBigIntError,
+    ParseBigInt,
+    MessageTooLong
 }
 
 impl From<ParseBigIntError> for VerifyingError {
     fn from(_: ParseBigIntError) -> Self {
-        VerifyingError::ParseBigIntError
+        VerifyingError::ParseBigInt
+    }
+}
+
+impl From<TryFromSliceError> for VerifyingError {
+    fn from(_: TryFromSliceError) -> Self {
+        VerifyingError::MessageTooLong
     }
 }
 
@@ -103,11 +109,22 @@ pub struct EcdsaCustom {
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Default)]
-pub struct SigningIntermediateValuesBytes {
+pub struct SigningIntermediateValuesHex {
     pub hash: String,
     pub truncated_hash: String,
     pub generated_point: PointHex,
     pub signature: SignatureHex,
+}
+
+#[wasm_bindgen(getter_with_clone)]
+#[derive(Default)]
+pub struct VerifyingIntermediateValuesHex {
+    pub hash: String,
+    pub truncated_hash: String,
+    pub u1: String,
+    pub u2: String,
+    pub generated_point: PointHex,
+    pub valid: bool,
 }
 trait DynHashingAlgorithm {
     fn update(&mut self, data: &[u8]);
@@ -189,7 +206,7 @@ impl EcdsaCustom {
         key: &str,
         message: &str,
         hashing_algorithm_type: HashingAlgorithmType,
-    ) -> Result<SigningIntermediateValuesBytes, SigningError> {
+    ) -> Result<SigningIntermediateValuesHex, SigningError> {
         sign(&self.ecdsa, k, key, message, hashing_algorithm_type)
     }
 
@@ -197,17 +214,12 @@ impl EcdsaCustom {
         &self,
         x: &str,
         y: &str,
-        hash: &str,
         r: &str,
         s: &str,
-    ) -> Result<bool, VerifyingError> {
-        let key = Point::new(BigUint::from_be_hex(x)?, BigUint::from_be_hex(y)?);
-
-        let hash = BigUint::from_be_hex(hash)?;
-
-        let signature = (BigUint::from_be_hex(r)?, BigUint::from_be_hex(s)?);
-
-        Ok(self.ecdsa.verify(&key, &hash, &signature))
+        message: &str,
+        hashing_algorithm_type: HashingAlgorithmType,
+    ) -> Result<VerifyingIntermediateValuesHex, VerifyingError> {
+        verify(&self.ecdsa, x, y, r, s, message, hashing_algorithm_type)
     }
 }
 
@@ -232,7 +244,7 @@ macro_rules! impl_ecdsa {
                 key: &str,
                 message: &str,
                 hashing_algorithm_type: HashingAlgorithmType,
-            ) -> Result<SigningIntermediateValuesBytes, SigningError> {
+            ) -> Result<SigningIntermediateValuesHex, SigningError> {
                 sign(&self.ecdsa, k, key, message, hashing_algorithm_type)
             }
 
@@ -240,17 +252,12 @@ macro_rules! impl_ecdsa {
                 &self,
                 x: &str,
                 y: &str,
-                hash: &str,
                 r: &str,
                 s: &str,
-            ) -> Result<bool, VerifyingError> {
-                let key = Point::new(BigUint::from_be_hex(x)?, BigUint::from_be_hex(y)?);
-
-                let hash = BigUint::from_be_hex(hash)?;
-
-                let signature = (BigUint::from_be_hex(r)?, BigUint::from_be_hex(s)?);
-
-                Ok(self.ecdsa.verify(&key, &hash, &signature))
+                message: &str,
+                hashing_algorithm_type: HashingAlgorithmType,
+            ) -> Result<VerifyingIntermediateValuesHex, VerifyingError> {
+                verify(&self.ecdsa, x, y, r, s, message, hashing_algorithm_type)
             }
         }
     };
@@ -266,13 +273,13 @@ pub fn sign<T: Numeric, const N: usize>(
     key: &str,
     message: &str,
     hashing_algorithm_type: HashingAlgorithmType,
-) -> Result<SigningIntermediateValuesBytes, SigningError>
+) -> Result<SigningIntermediateValuesHex, SigningError>
 where
     T: FromBeBytes<Bytes = [u8; N]> + LowerHex + FromStrRadix<Error = ParseBigIntError>,
     <T as Widen>::Output: Widened<T>,
 {
     console_error_panic_hook::set_once();
-    let mut intermediate_values = SigningIntermediateValuesBytes::default();
+    let mut intermediate_values = SigningIntermediateValuesHex::default();
     let hasher = hashing_algorithm_type.to_hashing_algorithm();
 
     let message_bytes = message.as_bytes();
@@ -310,6 +317,62 @@ where
         r: format!("{:x}", signing_intermediate_values.signature.0),
         s: format!("{:x}", signing_intermediate_values.signature.1),
     };
+
+    Ok(intermediate_values)
+}
+
+pub fn verify<T: Numeric, const N: usize> (
+    ecdsa: &Ecdsa<T>,
+    x: &str,
+    y: &str,
+    r: &str,
+    s: &str,
+    message: &str,
+    hashing_algorithm_type: HashingAlgorithmType,
+) -> Result<VerifyingIntermediateValuesHex, VerifyingError> where     T: FromBeBytes<Bytes = [u8; N]> + LowerHex + FromStrRadix<Error = ParseBigIntError>,
+<T as Widen>::Output: Widened<T>,{
+    let mut intermediate_values = VerifyingIntermediateValuesHex::default();
+    let key = Point::new(T::from_str_radix(x, 16)?, T::from_str_radix(y, 16)?);
+
+    let hasher = hashing_algorithm_type.to_hashing_algorithm();
+
+    let message_bytes = message.as_bytes();
+    let hash = match hasher {
+        Some(mut hasher) => {
+            hasher.update(message_bytes);
+            let digest = hasher.digest();
+            intermediate_values.hash = digest.iter().map(|byte| format!("{:02x}", byte)).collect();
+            let mut truncated = [0u8; N];
+            let start = N.saturating_sub(digest.len());
+            truncated[start..].copy_from_slice(&digest[..min(N, digest.len())]);
+            T::from_be_bytes(&truncated)
+        }
+        None => {
+            intermediate_values.hash = message_bytes
+                .iter()
+                .map(|byte| format!("{:02x}", byte))
+                .collect();
+            T::from_be_bytes(message_bytes.try_into()?)
+        }
+    };
+
+    let signature = (T::from_str_radix(r, 16)?, T::from_str_radix(s, 16)?);
+
+    let verifying_intermediate_values = ecdsa.verify(&key, &hash, &signature);
+
+    if let Some(u) = verifying_intermediate_values.u {
+        intermediate_values.u1 = format!("{:x}", u.0);
+        intermediate_values.u2 = format!("{:x}", u.1);
+    }
+
+    if let Some(generated_point) = verifying_intermediate_values.generated_point {
+        intermediate_values.generated_point = PointHex {
+            x: format!("{:x}", generated_point.x),
+            y: format!("{:x}", generated_point.y),
+        };
+    }
+    
+    intermediate_values.valid = verifying_intermediate_values.valid;
 
     Ok(intermediate_values)
 }

@@ -26,9 +26,21 @@ pub struct SigningIntermediateValues<T> {
     signature: (T, T),
 }
 
+pub struct VerifyingIntermediateValues<T> {
+    u: Option<(T, T)>,
+    generated_point: Option<Point<T>>,
+    valid: bool,
+}
+
+impl <T> Default for VerifyingIntermediateValues<T> {
+    fn default() -> Self {
+        Self { u: None, generated_point: None, valid: false }
+    }
+}
+
 impl<T: Numeric> Ecdsa<T>
 where
-    <T as Widen>::Output: Widened<T>,
+    <T as Widen>::Output: Widened<T>
 {
     pub const fn new(config: Config<T>) -> Self {
         Self { config }
@@ -69,8 +81,9 @@ where
         })
     }
 
-    pub fn verify(&self, key: &Point<T>, hash: &T, signature: &(T, T)) -> bool {
+    pub fn verify(&self, key: &Point<T>, hash: &T, signature: &(T, T)) -> VerifyingIntermediateValues<T> {
         let Config { p, a, b, g, n, .. } = &self.config;
+        let mut intermediate_values = VerifyingIntermediateValues::default();
 
         let curve = Curve::new(*a, *b, *p);
         let ring = Ring::new(*n);
@@ -79,31 +92,35 @@ where
 
         let s_inv = match ring.inv(s) {
             Some(inv) => inv,
-            None => return false,
+            None => return intermediate_values,
         };
 
         let u1 = ring.mul(*hash, s_inv);
         let u2 = ring.mul(r, s_inv);
+        intermediate_values.u = Some((u1, u2));
 
         let point1 = match curve.mul(g, u1) {
             Some(point) => point,
-            None => return false,
+            None => return intermediate_values,
         };
 
         let point2 = match curve.mul(key, u2) {
             Some(point) => point,
-            None => return false,
+            None => return intermediate_values,
         };
 
         let random_point = match curve.add(&point1, &point2) {
             Some(point) => point,
-            None => return false,
+            None => return intermediate_values,
         };
 
+        intermediate_values.generated_point = Some(random_point.clone());
+
         if r == random_point.x {
-            true
+            intermediate_values.valid = true;
+            intermediate_values
         } else {
-            false
+            intermediate_values
         }
     }
 }

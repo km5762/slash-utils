@@ -132,7 +132,7 @@ mod tests {
                 numeric::FromStrRadix::from_str_radix($test.public_key.1, 16).unwrap(),
             );
 
-            assert!(ecdsa.verify(&public_key, &hash, &signature));
+            assert!(ecdsa.verify(&public_key, &hash, &signature).valid);
         }};
     }
 }
