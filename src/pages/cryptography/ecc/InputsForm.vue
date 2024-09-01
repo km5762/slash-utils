@@ -40,10 +40,13 @@ const signingAlgorithmConfig = reactive<SigningAlgorithmConfig>({
   n: "",
 });
 const privateKey = ref("");
+const x = ref("");
+const y = ref("");
+const r = ref("");
+const s = ref("");
 const k = ref("");
 const m = ref("");
-const options = ["Sign", "Verify"];
-const selectedOption = ref("Sign");
+const modes = ["Sign", "Verify"];
 
 const signingAlgorithmSelected = computed(
   () => signingAlgorithmType.value !== "custom"
@@ -114,10 +117,9 @@ const handleHashAlgorithmChange = (event: Event) => {
       hashingAlgorithmType.value = HashingAlgorithmType.Sha512;
       break;
   }
-  m.value = "";
 };
 
-async function computeSignature() {
+function getSigningAlgorithmInstance() {
   let signingAlgorithm;
   switch (signingAlgorithmType.value) {
     case "P-256":
@@ -135,26 +137,31 @@ async function computeSignature() {
       break;
   }
 
-  console.log(k.value, privateKey.value, m.value, hashingAlgorithmType.value);
-  const intermediateValues = signingAlgorithm.sign(
+  return signingAlgorithm;
+}
+
+function computeSignature() {
+  let signingAlgorithm = getSigningAlgorithmInstance();
+
+  intermediateValuesStore.signingIntermediateValues = signingAlgorithm.sign(
     k.value,
     privateKey.value,
     m.value,
     hashingAlgorithmType.value
   );
+}
 
-  const { hash, truncated_hash, generated_point, signature } =
-    intermediateValues;
+function verifySignature() {
+  let signingAlgorithm = getSigningAlgorithmInstance();
 
-  const { x, y } = generated_point;
-  const { r, s } = signature;
-
-  intermediateValuesStore.e = hash;
-  intermediateValuesStore.z = truncated_hash;
-  intermediateValuesStore.r = r;
-  intermediateValuesStore.s = s;
-  intermediateValuesStore.x = x;
-  intermediateValuesStore.y = y;
+  intermediateValuesStore.verifyingIntermediateValues = signingAlgorithm.verify(
+    x.value,
+    y.value,
+    r.value,
+    s.value,
+    m.value,
+    hashingAlgorithmType.value
+  );
 }
 </script>
 
@@ -163,12 +170,12 @@ async function computeSignature() {
     <h3 class="font-bold underline text-3xl pb-4">Inputs</h3>
     <SegmentedControl
       class="flex w-full pb-4"
-      :options="options"
-      v-model="selectedOption"
+      :options="modes"
+      v-model="intermediateValuesStore.selectedMode"
     />
     <div class="flex gap-12">
       <div>
-        <label for="config">Signing Algorithm</label>
+        <label for="config" class="font-bold">Signing Algorithm</label>
         <Dropdown
           @change="handleSigningAlgorithmChange"
           name="signing-algorithm"
@@ -182,7 +189,7 @@ async function computeSignature() {
         </Dropdown>
       </div>
       <div>
-        <label for="hash">Hash Algorithm</label>
+        <label for="hash" class="font-bold">Hash Algorithm</label>
         <Dropdown
           @change="handleHashAlgorithmChange"
           name="hash"
@@ -198,19 +205,29 @@ async function computeSignature() {
         </Dropdown>
       </div>
     </div>
-    <form class="flex flex-col gap-2 text-xl">
-      <fieldset>
-        <legend class="float-left">Curve</legend>
-        <InfoToolTip class="inline-block"
-          >An equation for an elliptic curve</InfoToolTip
-        >
+    <form class="flex flex-col gap-2">
+      <fieldset class="flex flex-col">
+        <div>
+          <legend class="float-left">Curve</legend>
+          <InfoToolTip class="inline-block"
+            >An equation for an elliptic curve</InfoToolTip
+          >
+        </div>
         <math
           xmlns="http://www.w3.org/1998/Math/MathML"
-          class="block text-nowrap font-mono"
-          ><msup><mi>y</mi><mn>2</mn></msup
-          ><mo>=</mo><msup><mi>x</mi><mn>2</mn></msup
-          ><mo>+</mo
-          ><mtext>
+          class="text-nowrap font-mono"
+        >
+          <msup>
+            <mi>y</mi>
+            <mn>2</mn>
+          </msup>
+          <mo>=</mo>
+          <msup>
+            <mi>x</mi>
+            <mn>2</mn>
+          </msup>
+          <mo>+</mo>
+          <mtext>
             <label for="a" hidden>a</label>
             <TextInput
               :disabled="signingAlgorithmSelected"
@@ -218,9 +235,11 @@ async function computeSignature() {
               v-model="signingAlgorithmConfig.a"
               :filter="hex"
               :maxLength
-            /> </mtext
-          ><mi>x</mi><mo>+</mo
-          ><mtext>
+            />
+          </mtext>
+          <mi>x</mi>
+          <mo>+</mo>
+          <mtext>
             <label for="b" hidden>b</label>
             <TextInput
               :disabled="signingAlgorithmSelected"
@@ -228,7 +247,8 @@ async function computeSignature() {
               v-model="signingAlgorithmConfig.b"
               :filter="hex"
               :maxLength
-          /></mtext>
+            />
+          </mtext>
         </math>
       </fieldset>
       <div>
@@ -289,7 +309,7 @@ async function computeSignature() {
           :maxLength
         />
       </div>
-      <div v-if="selectedOption === 'Sign'">
+      <div v-if="intermediateValuesStore.selectedMode === 'Sign'">
         <label for="private-key">Private Key(d<sub>a</sub>)</label>
         <InfoToolTip class="inline-block"
           >The private key of the signer</InfoToolTip
@@ -301,7 +321,7 @@ async function computeSignature() {
           :maxLength
         />
       </div>
-      <div v-if="selectedOption === 'Sign'">
+      <div v-if="intermediateValuesStore.selectedMode === 'Sign'">
         <label for="k">Random Seed(k)</label>
         <InfoToolTip class="inline-block"
           >The private key of the signer</InfoToolTip
@@ -322,6 +342,7 @@ async function computeSignature() {
             id="public-key-x"
             :filter="hex"
             :maxLength
+            v-model="x"
           />
           <span>,</span>
           <label for="public-key-y" hidden>Public Key Y</label>
@@ -330,6 +351,7 @@ async function computeSignature() {
             id="public-key-y"
             :filter="hex"
             :maxLength
+            v-model="y"
           />
           <span>)</span>
         </div>
@@ -337,7 +359,7 @@ async function computeSignature() {
       <div>
         <label for="message">Message(m)</label>
         <InfoToolTip class="inline-block">{{
-          selectedOption === "Sign"
+          intermediateValuesStore.selectedMode === "Sign"
             ? "The message to sign"
             : "The message that was signed"
         }}</InfoToolTip>
@@ -347,25 +369,35 @@ async function computeSignature() {
           :maxLength="hashingAlgorithmSelected ? undefined : maxLength"
         />
       </div>
-      <fieldset v-if="selectedOption === 'Verify'">
+      <fieldset v-if="intermediateValuesStore.selectedMode === 'Verify'">
         <legend class="float-left">Signature</legend>
         <InfoToolTip class="inline-block"
           >The signature defined by the pair
-          <span class="italic">(r,s)</span></InfoToolTip
-        >
+          <span class="italic">(r,s)</span>
+        </InfoToolTip>
         <div>
           <label class="italic">
-            r:<TextInput class="inline" :filter="hex" />
+            r:
+            <TextInput class="inline" :filter="hex" v-model="r" />
           </label>
           <label class="italic">
-            s:<TextInput class="inline" :filter="hex" />
+            s:
+            <TextInput class="inline" :filter="hex" v-model="s" />
           </label>
         </div>
       </fieldset>
-      <div>
-        <SubmitButton type="button" @click="computeSignature">{{
-          selectedOption.toUpperCase()
-        }}</SubmitButton>
+      <div class="flex justify-center">
+        <SubmitButton
+          type="button"
+          @click="
+            intermediateValuesStore.selectedMode === 'Sign'
+              ? computeSignature()
+              : verifySignature()
+          "
+          >{{
+            intermediateValuesStore.selectedMode.toUpperCase()
+          }}</SubmitButton
+        >
       </div>
     </form>
   </div>
