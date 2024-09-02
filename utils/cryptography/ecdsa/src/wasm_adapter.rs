@@ -7,6 +7,7 @@ use alloc::{boxed::Box, format, string::String, vec::Vec};
 use big_num::{
     types::{U256, U384, U640}, ParseBigIntError,
 };
+use curves::{Config, InvalidGeneratorError, P256, P384, P521};
 use elliptic_curve::{Numeric, Point};
 use modular::Widened;
 use numeric::{FromBeBytes, FromStrRadix, Widen};
@@ -15,10 +16,7 @@ use sha::{
 };
 use wasm_bindgen::prelude::*;
 
-use crate::{
-    configs::{p521::P521, Config, InvalidGeneratorError, P256, P384},
-    Ecdsa,
-};
+use crate::Ecdsa;
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Clone, Default)]

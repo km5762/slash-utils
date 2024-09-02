@@ -32,11 +32,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "ecc"
+name = "curves"
+version = "0.1.0"
+dependencies = [
+ "big_num",
+ "elliptic_curve",
+ "modular",
+ "numeric",
+]
+
+[[package]]
+name = "ecdsa"
 version = "0.1.0"
 dependencies = [
  "big_num",
  "console_error_panic_hook",
+ "curves",
  "elliptic_curve",
  "modular",
  "numeric",

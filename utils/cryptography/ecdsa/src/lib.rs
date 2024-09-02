@@ -1,11 +1,13 @@
 #![no_std]
 
-pub mod configs;
 pub mod wasm_adapter;
+mod p256;
+mod p384;
+mod p521;
 
 extern crate alloc;
 
-use configs::Config;
+use curves::Config;
 use elliptic_curve::{Curve, Numeric, Point};
 use modular::{Ring, Widened};
 use numeric::Widen;
@@ -122,5 +124,61 @@ where
         } else {
             intermediate_values
         }
+    }
+}
+
+#[cfg(test)] 
+mod test {
+    use curves::Config;
+
+    #[macro_export]
+    macro_rules! test_point_generation {
+        ($config:expr, $k:expr, $expected_x:expr, $expected_y:expr) => {{
+            let curve = elliptic_curve::Curve::new($config.a, $config.b, $config.p);
+            let k = numeric::FromStrRadix::from_str_radix($k, 10).unwrap();
+            let result = curve.mul(&$config.g, k).unwrap();
+            let x = result.x.to_str_radix(16);
+            let y = result.y.to_str_radix(16);
+
+            assert_eq!($expected_x.to_lowercase(), x.to_lowercase());
+            assert_eq!($expected_y.to_lowercase(), y.to_lowercase());
+        }};
+    }
+
+    pub struct SignTest<'a, T> {
+        pub config: Config<T>,
+        pub private_key: &'a str,
+        pub public_key: (&'a str, &'a str),
+        pub k: &'a str,
+        pub hash: &'a str,
+        pub signature: (&'a str, &'a str),
+    }
+
+    #[macro_export]
+    macro_rules! test_sign {
+        ($test: expr) => {{
+            let ecdsa = crate::Ecdsa::new($test.config);
+
+            let k = numeric::FromStrRadix::from_str_radix($test.k, 16).unwrap();
+            let private_key = numeric::FromStrRadix::from_str_radix($test.private_key, 16).unwrap();
+            let hash = numeric::FromStrRadix::from_str_radix($test.hash, 16).unwrap();
+
+            let signature = ecdsa.sign(&k, &private_key, &hash).unwrap().signature;
+            assert_eq!(
+                $test.signature.0.to_uppercase(),
+                signature.0.to_str_radix(16).to_uppercase()
+            );
+            assert_eq!(
+                $test.signature.1.to_uppercase(),
+                signature.1.to_str_radix(16).to_uppercase()
+            );
+
+            let public_key = elliptic_curve::Point::new(
+                numeric::FromStrRadix::from_str_radix($test.public_key.0, 16).unwrap(),
+                numeric::FromStrRadix::from_str_radix($test.public_key.1, 16).unwrap(),
+            );
+
+            assert!(ecdsa.verify(&public_key, &hash, &signature).valid);
+        }};
     }
 }

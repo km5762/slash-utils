@@ -1,0 +1,10 @@
+[package]
+name = "curves"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+big_num = {path = "../../math/big_num"}
+elliptic_curve = {path = "../../math/elliptic_curve"}
+numeric = {path = "../../traits/numeric"}
+modular = {path = "../../math/modular"}
