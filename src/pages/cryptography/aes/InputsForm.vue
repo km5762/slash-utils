@@ -5,6 +5,7 @@ import { onBeforeMount, ref } from "vue";
 import Container from "../../../components/Container.vue";
 import TextArea from "@/components/TextArea.vue";
 import { pinia } from "@/pinia.ts";
+import Label from "@/components/Label.vue";
 
 const intermediateValuesStore = useIntermediateValuesStore(pinia);
 </script>
@@ -14,20 +15,20 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
     <h3 class="font-bold underline text-3xl pb-2">Inputs</h3>
     <div class="flex flex-wrap content-between justify-center w-full gap-8">
       <Container class="w-full max-w-96">
-        <label
+        <Label
           >Block:
           <TextArea
             v-model="intermediateValuesStore.decryptedBlock"
             class="w-full"
           />
-        </label>
-        <label
+        </Label>
+        <Label
           >Key:
           <TextArea
             v-model="intermediateValuesStore.encryptionKey"
             class="w-full"
           />
-        </label>
+        </Label>
         <div class="flex justify-center">
           <button
             class="bg-teal-600 rounded px-4 py-2 font-bold mt-4 text-white"
@@ -43,21 +44,21 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
         </div>
       </Container>
       <Container class="w-full max-w-96">
-        <label
+        <Label
           >Encrypted Block:
           <textarea
             class="block rounded bg-slate-200 text-slate-950 border-slate-700 border w-full px-2"
             v-model="intermediateValuesStore.encryptedBlock"
           />
-        </label>
-        <label
+        </Label>
+        <Label
           >Key:
           <textarea
             type="text"
             class="block rounded bg-slate-200 text-slate-950 border-slate-700 border w-full px-2"
             v-model="intermediateValuesStore.decryptionKey"
           />
-        </label>
+        </Label>
         <div class="flex justify-center">
           <button
             class="bg-teal-600 rounded px-4 py-2 font-bold mt-4 text-white"

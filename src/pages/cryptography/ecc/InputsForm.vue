@@ -25,6 +25,8 @@ import { HexString } from "@/utils/hex-string";
 import { useIntermediateValuesStore } from "./IntermediateValuesStore";
 import { pinia } from "@/pinia";
 import type { Result } from "@/utils/error-types";
+import Label from "@/components/Label.vue";
+import Legend from "@/components/Legend.vue";
 
 const intermediateValuesStore = useIntermediateValuesStore(pinia);
 const signingAlgorithmType = ref<SigningAlgorithmType>("custom");
@@ -175,7 +177,7 @@ function verifySignature() {
     />
     <div class="flex gap-12">
       <div>
-        <label for="config" class="font-bold">Signing Algorithm</label>
+        <Label for="config">Signing Algorithm</Label>
         <Dropdown
           @change="handleSigningAlgorithmChange"
           name="signing-algorithm"
@@ -189,7 +191,7 @@ function verifySignature() {
         </Dropdown>
       </div>
       <div>
-        <label for="hash" class="font-bold">Hash Algorithm</label>
+        <Label for="hash">Hash Algorithm</Label>
         <Dropdown
           @change="handleHashAlgorithmChange"
           name="hash"
@@ -208,7 +210,7 @@ function verifySignature() {
     <form class="flex flex-col gap-2">
       <fieldset class="flex flex-col">
         <div>
-          <legend class="float-left">Curve</legend>
+          <Legend class="float-left">Curve</Legend>
           <InfoToolTip class="inline-block"
             >An equation for an elliptic curve</InfoToolTip
           >
@@ -228,7 +230,7 @@ function verifySignature() {
           </msup>
           <mo>+</mo>
           <mtext>
-            <label for="a" hidden>a</label>
+            <Label for="a" hidden>a</Label>
             <TextInput
               :disabled="signingAlgorithmSelected"
               id="a"
@@ -240,7 +242,7 @@ function verifySignature() {
           <mi>x</mi>
           <mo>+</mo>
           <mtext>
-            <label for="b" hidden>b</label>
+            <Label for="b" hidden>b</Label>
             <TextInput
               :disabled="signingAlgorithmSelected"
               id="b"
@@ -252,7 +254,7 @@ function verifySignature() {
         </math>
       </fieldset>
       <div>
-        <label for="p">Modulus(p)</label>
+        <Label for="p">Modulus(<i>p</i>)</Label>
         <InfoToolTip class="inline-block"
           >The integer order of the subgroup of elliptic curve
           points</InfoToolTip
@@ -266,14 +268,14 @@ function verifySignature() {
         />
       </div>
       <fieldset>
-        <legend class="float-left">Base Point(G)</legend>
+        <Legend class="float-left">Base Point(<i>G</i>)</Legend>
         <InfoToolTip class="inline-block"
           >The base point which generates all other elliptic curve points in the
           subgroup</InfoToolTip
         >
         <div>
           <span>(</span>
-          <label for="base-point-x" hidden>Base Point X</label>
+          <Label for="base-point-x" hidden>Base Point X</Label>
           <TextInput
             :disabled="signingAlgorithmSelected"
             class="inline"
@@ -283,7 +285,7 @@ function verifySignature() {
             :maxLength
           />
           <span>,</span>
-          <label for="base-point-y" hidden>Base Point Y</label>
+          <Label for="base-point-y" hidden>Base Point Y</Label>
           <TextInput
             :disabled="signingAlgorithmSelected"
             class="inline"
@@ -296,7 +298,7 @@ function verifySignature() {
         </div>
       </fieldset>
       <div>
-        <label for="n">Order(n)</label>
+        <Label for="n">Order(<i>n</i>)</Label>
         <InfoToolTip class="inline-block"
           >The integer order of the subgroup of elliptic curve
           points</InfoToolTip
@@ -310,7 +312,10 @@ function verifySignature() {
         />
       </div>
       <div v-if="intermediateValuesStore.selectedMode === 'Sign'">
-        <label for="private-key">Private Key(d<sub>a</sub>)</label>
+        <Label for="private-key"
+          >Private Key(<i>d<sub>a</sub></i
+          >)</Label
+        >
         <InfoToolTip class="inline-block"
           >The private key of the signer</InfoToolTip
         >
@@ -322,21 +327,24 @@ function verifySignature() {
         />
       </div>
       <div v-if="intermediateValuesStore.selectedMode === 'Sign'">
-        <label for="k">Random Seed(k)</label>
+        <Label for="k">Random Seed(<i>k</i>)</Label>
         <InfoToolTip class="inline-block"
           >The private key of the signer</InfoToolTip
         >
         <TextInput id="k" v-model="k" :filter="hex" :maxLength />
       </div>
       <fieldset v-else>
-        <legend class="float-left">Public Key</legend>
+        <Legend class="float-left"
+          >Public Key(<i>Q<sub>A</sub></i
+          >)</Legend
+        >
         <InfoToolTip class="inline-block"
           >The public key derived from the private key as a point on the
           curve</InfoToolTip
         >
         <div>
           <span>(</span>
-          <label for="public-key-x" hidden>Public Key X</label>
+          <Label for="public-key-x" hidden>Public Key X</Label>
           <TextInput
             class="inline"
             id="public-key-x"
@@ -345,7 +353,7 @@ function verifySignature() {
             v-model="x"
           />
           <span>,</span>
-          <label for="public-key-y" hidden>Public Key Y</label>
+          <Label for="public-key-y" hidden>Public Key Y</Label>
           <TextInput
             class="inline"
             id="public-key-y"
@@ -357,7 +365,7 @@ function verifySignature() {
         </div>
       </fieldset>
       <div>
-        <label for="message">Message(m)</label>
+        <Label for="message">Message(<i>m</i>)</Label>
         <InfoToolTip class="inline-block">{{
           intermediateValuesStore.selectedMode === "Sign"
             ? "The message to sign"
@@ -370,20 +378,20 @@ function verifySignature() {
         />
       </div>
       <fieldset v-if="intermediateValuesStore.selectedMode === 'Verify'">
-        <legend class="float-left">Signature</legend>
+        <Legend class="float-left">Signature</Legend>
         <InfoToolTip class="inline-block"
           >The signature defined by the pair
           <span class="italic">(r,s)</span>
         </InfoToolTip>
         <div>
-          <label class="italic">
+          <Label class="italic">
             r:
             <TextInput class="inline" :filter="hex" v-model="r" />
-          </label>
-          <label class="italic">
+          </Label>
+          <Label class="italic">
             s:
             <TextInput class="inline" :filter="hex" v-model="s" />
-          </label>
+          </Label>
         </div>
       </fieldset>
       <div class="flex justify-center">
