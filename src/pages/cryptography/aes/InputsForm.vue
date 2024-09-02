@@ -5,6 +5,7 @@ import { onBeforeMount, ref } from "vue";
 import Container from "../../../components/Container.vue";
 import TextArea from "@/components/TextArea.vue";
 import { pinia } from "@/pinia.ts";
+import SubmitButton from "@/components/SubmitButton.vue";
 import Label from "@/components/Label.vue";
 
 const intermediateValuesStore = useIntermediateValuesStore(pinia);
@@ -30,7 +31,7 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
           />
         </Label>
         <div class="flex justify-center">
-          <button
+          <SubmitButton
             class="bg-teal-600 rounded px-4 py-2 font-bold mt-4 text-white"
             @click="
               () => {
@@ -40,7 +41,7 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
             "
           >
             ENCRYPT
-          </button>
+          </SubmitButton>
         </div>
       </Container>
       <Container class="w-full max-w-96">
@@ -60,7 +61,7 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
           />
         </Label>
         <div class="flex justify-center">
-          <button
+          <SubmitButton
             class="bg-teal-600 rounded px-4 py-2 font-bold mt-4 text-white"
             @click="
               () => {
@@ -70,7 +71,7 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
             "
           >
             DECRYPT
-          </button>
+          </SubmitButton>
         </div>
       </Container>
     </div>

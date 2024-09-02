@@ -171,7 +171,7 @@ function verifySignature() {
   <div class="flex-col items-center flex grow content-center w-full">
     <h3 class="font-bold underline text-3xl pb-4">Inputs</h3>
     <SegmentedControl
-      class="flex w-full pb-4"
+      class="flex w-full mb-4"
       :options="modes"
       v-model="intermediateValuesStore.selectedMode"
     />
