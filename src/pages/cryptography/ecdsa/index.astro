@@ -5,21 +5,21 @@ import InputsForm from "./InputsForm.vue";
 import IntermediateValues from "./IntermediateValues.vue";
 ---
 
-<Layout title="Online ECC Calculator With Intermediate Values">
+<Layout title="Online ECDSA Calculator With Intermediate Values">
   <main class="flex flex-col items-center">
-    <h1 class="text-7xl font-bold pb-2 text-center">/ECC</h1>
-    <div class="flex gap-8 flex-wrap justify-center">
+    <h1 class="text-7xl font-bold pb-2 text-center">/ECDSA</h1>
+    <Container class="flex gap-8 flex-wrap justify-center">
       <Container>
           <InputsForm client:load/>
       </Container>
       <Container>
         <IntermediateValues client:load/>
       </Container>
-    </div>
+    </Container>
   </main>
 </Layout>
 
 <script>
-  import init from "@utils/cryptography/ecc/pkg/ecc";
+  import init from "@utils/cryptography/ecdsa/pkg/ecdsa";
   init();
 </script>

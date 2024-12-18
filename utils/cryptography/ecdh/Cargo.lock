@@ -3,5 +3,48 @@
 version = 3
 
 [[package]]
+name = "big_num"
+version = "0.1.0"
+dependencies = [
+ "numeric",
+]
+
+[[package]]
+name = "curves"
+version = "0.1.0"
+dependencies = [
+ "big_num",
+ "elliptic_curve",
+ "modular",
+ "numeric",
+]
+
+[[package]]
 name = "ecdh"
+version = "0.1.0"
+dependencies = [
+ "big_num",
+ "curves",
+ "elliptic_curve",
+ "modular",
+ "numeric",
+]
+
+[[package]]
+name = "elliptic_curve"
+version = "0.1.0"
+dependencies = [
+ "modular",
+ "numeric",
+]
+
+[[package]]
+name = "modular"
+version = "0.1.0"
+dependencies = [
+ "numeric",
+]
+
+[[package]]
+name = "numeric"
 version = "0.1.0"

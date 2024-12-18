@@ -77,7 +77,7 @@ const { selectedMode, signingIntermediateValues, verifyingIntermediateValues } =
             <mo>&#x22C5;</mo>
             <msub>
               <mi>d</mi>
-              <mi>a</mi>
+              <mi>A</mi>
             </msub>
             <mo>)</mo>
             <mo>mod</mo>

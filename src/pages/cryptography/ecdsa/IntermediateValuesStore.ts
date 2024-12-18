@@ -5,7 +5,7 @@ import init, {
   EcdsaP521,
   SigningIntermediateValuesHex,
   VerifyingIntermediateValuesHex,
-} from "@utils/cryptography/ecc/pkg/ecc";
+} from "@utils/cryptography/ecdsa/pkg/ecdsa";
 import { reactive, ref, watch } from "vue";
 
 export const useIntermediateValuesStore = defineStore(

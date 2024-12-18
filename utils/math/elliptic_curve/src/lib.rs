@@ -70,7 +70,7 @@ where
         Some(Point::new(x, y))
     }
 
-    pub fn mul(&self, p: &Point<T>, d: T) -> Option<Point<T>> {
+    pub fn mul(&self, p: &Point<T>, d: &T) -> Option<Point<T>> {
         let size = core::mem::size_of::<T>() * 8;
         let bits = size - d.leading_zeros() as usize;
         let mut res = p.clone();
@@ -160,13 +160,13 @@ mod tests {
     fn mul_double() {
         let p = Point::new(11, 4);
         let curve = Curve::new(-7, 10, 13);
-        assert_eq!(Some(Point::new(5, 3)), curve.mul(&p, 2));
+        assert_eq!(Some(Point::new(5, 3)), curve.mul(&p, &2));
     }
 
     #[test]
     fn mul_triple() {
         let p = Point::new(11, 4);
         let curve = Curve::new(-7, 10, 13);
-        assert_eq!(Some(Point::new(1, 2)), curve.mul(&p, 3));
+        assert_eq!(Some(Point::new(1, 2)), curve.mul(&p, &3));
     }
 }

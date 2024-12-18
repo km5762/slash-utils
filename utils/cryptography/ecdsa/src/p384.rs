@@ -4,7 +4,6 @@ mod tests {
 
     use crate::{test::SignTest, test_sign};
 
-
     #[test]
     fn sign_and_verify_p384() {
         let private_key = "6B9D3DAD2E1B8C1C05B19875B6659F4DE23C3B667BF297BA9AA47740787137D896D5724E4C70A825F872C9EA60D2EDF5";

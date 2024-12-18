@@ -1,9 +1,9 @@
 #![no_std]
 
-pub mod wasm_adapter;
 mod p256;
 mod p384;
 mod p521;
+pub mod wasm_adapter;
 
 extern crate alloc;
 
@@ -34,15 +34,19 @@ pub struct VerifyingIntermediateValues<T> {
     valid: bool,
 }
 
-impl <T> Default for VerifyingIntermediateValues<T> {
+impl<T> Default for VerifyingIntermediateValues<T> {
     fn default() -> Self {
-        Self { u: None, generated_point: None, valid: false }
+        Self {
+            u: None,
+            generated_point: None,
+            valid: false,
+        }
     }
 }
 
 impl<T: Numeric> Ecdsa<T>
 where
-    <T as Widen>::Output: Widened<T>
+    <T as Widen>::Output: Widened<T>,
 {
     pub const fn new(config: Config<T>) -> Self {
         Self { config }
@@ -54,12 +58,12 @@ where
         key: &T,
         hash: &T,
     ) -> Result<SigningIntermediateValues<T>, SigningError> {
-        let Config { p, a, b, g, n, .. } = &self.config;
+        let Config { g, n, .. } = &self.config;
 
-        let curve = Curve::new(*a, *b, *p);
-        let ring = Ring::new(*n);
+        let curve = self.config.get_curve();
+        let ring = self.config.get_ring();
 
-        let point = match curve.mul(&g, *k) {
+        let point = match curve.mul(&g, k) {
             Some(point) => point,
             None => return Err(SigningError::InvalidPoint),
         };
@@ -83,7 +87,12 @@ where
         })
     }
 
-    pub fn verify(&self, key: &Point<T>, hash: &T, signature: &(T, T)) -> VerifyingIntermediateValues<T> {
+    pub fn verify(
+        &self,
+        key: &Point<T>,
+        hash: &T,
+        signature: &(T, T),
+    ) -> VerifyingIntermediateValues<T> {
         let Config { p, a, b, g, n, .. } = &self.config;
         let mut intermediate_values = VerifyingIntermediateValues::default();
 
@@ -101,12 +110,12 @@ where
         let u2 = ring.mul(r, s_inv);
         intermediate_values.u = Some((u1, u2));
 
-        let point1 = match curve.mul(g, u1) {
+        let point1 = match curve.mul(g, &u1) {
             Some(point) => point,
             None => return intermediate_values,
         };
 
-        let point2 = match curve.mul(key, u2) {
+        let point2 = match curve.mul(key, &u2) {
             Some(point) => point,
             None => return intermediate_values,
         };
@@ -127,7 +136,7 @@ where
     }
 }
 
-#[cfg(test)] 
+#[cfg(test)]
 mod test {
     use curves::Config;
 
@@ -136,7 +145,7 @@ mod test {
         ($config:expr, $k:expr, $expected_x:expr, $expected_y:expr) => {{
             let curve = elliptic_curve::Curve::new($config.a, $config.b, $config.p);
             let k = numeric::FromStrRadix::from_str_radix($k, 10).unwrap();
-            let result = curve.mul(&$config.g, k).unwrap();
+            let result = curve.mul(&$config.g, &k).unwrap();
             let x = result.x.to_str_radix(16);
             let y = result.y.to_str_radix(16);
 

@@ -4,3 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+elliptic_curve = {path = "../../math/elliptic_curve"}
+modular = {path = "../../math/modular"}
+big_num = {path = "../../math/big_num"}
+numeric = {path = "../../traits/numeric"}
+curves = {path = "../curves"}

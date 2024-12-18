@@ -20,7 +20,7 @@ import {
   EcdsaP384,
   EcdsaP521,
   HashingAlgorithmType,
-} from "@utils/cryptography/ecc/pkg/ecc";
+} from "@utils/cryptography/ecdsa/pkg/ecdsa";
 import { HexString } from "@/utils/hex-string";
 import { useIntermediateValuesStore } from "./IntermediateValuesStore";
 import { pinia } from "@/pinia";
@@ -168,16 +168,16 @@ function verifySignature() {
 </script>
 
 <template>
-  <div class="flex-col items-center flex grow content-center w-full">
-    <h3 class="font-bold underline text-3xl pb-4">Inputs</h3>
+  <div class="flex-col items-center flex grow content-center w-full gap-4">
+    <h3 class="font-bold underline text-3xl">Inputs</h3>
     <SegmentedControl
-      class="flex w-full mb-4"
+      class="flex w-full"
       :options="modes"
       v-model="intermediateValuesStore.selectedMode"
     />
-    <div class="flex gap-12">
+    <div class="flex gap-4">
       <div>
-        <Label for="config">Signing Algorithm</Label>
+        <Label for="config block">Sign Algorithm</Label>
         <Dropdown
           @change="handleSigningAlgorithmChange"
           name="signing-algorithm"
@@ -313,7 +313,7 @@ function verifySignature() {
       </div>
       <div v-if="intermediateValuesStore.selectedMode === 'Sign'">
         <Label for="private-key"
-          >Private Key(<i>d<sub>a</sub></i
+          >Private Key(<i>d<sub>A</sub></i
           >)</Label
         >
         <InfoToolTip class="inline-block"

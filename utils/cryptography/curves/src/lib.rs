@@ -1,8 +1,11 @@
 #![no_std]
 
-use big_num::{types::{U384, U640}, BigUint};
+use big_num::{
+    types::{U384, U640},
+    BigUint,
+};
 use elliptic_curve::{Curve, Numeric, Point};
-use modular::Widened;
+use modular::{Ring, Widened};
 use numeric::Widen;
 
 pub struct Config<T> {
@@ -35,6 +38,14 @@ where
             n,
             _private: (),
         })
+    }
+
+    pub fn get_ring(&self) -> Ring<T> {
+        Ring::new(self.n)
+    }
+
+    pub fn get_curve(&self) -> Curve<T> {
+        Curve::new(self.a, self.b, self.p)
     }
 }
 
@@ -127,7 +138,6 @@ pub const P521: Config<U640> = Config {
     _private: (),
 };
 
-
 #[cfg(test)]
 mod tests {
     extern crate alloc;
@@ -172,5 +182,3 @@ mod tests {
         assert_eq!(cfg, "")
     }
 }
-
-
