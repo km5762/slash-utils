@@ -6,42 +6,31 @@ import Lock from "@/components/icons/Lock.vue";
 import BaseButton from "@/components/BaseButton.vue";
 import BaseCTALink from "@/components/BaseCTALink.vue";
 import BaseCard from "@/components/BaseCard.vue";
+import BaseLink from "@/components/BaseLink.vue";
 ---
 
-<Layout title="/UTILS">
-  <main>
-    <section
-      class="bg-slate-800 flex flex-col just-center py-12 md:py-24 lg:py-32 xl:py-48 border-b border-slate-600 shadow-lg px-4"
-    >
-      <h1
-        class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none text-center"
+<Layout title="/UTILS" banner>
+  <span slot="title"> Explore Computer Science Algorithms </span>
+  <span slot="subtitle">
+    Dive into interactive modules covering a wide range of algorithms. Learn,
+    experiment, and visualize complex concepts with ease.
+  </span>
+  <section class="w-full py-12 md:py-24 lg:py-32">
+    <div class="px-4 md:px-6">
+      <h2
+        class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-8"
       >
-        Explore Computer Science Algorithms
-      </h1>
-      <p
-        class="mx-auto max-w-[800px] text-white/65 mt-1 md:text-xl dark:text-gray-40 text-center"
-      >
-        Dive into interactive modules covering a wide range of algorithms.
-        Learn, experiment, and visualize complex concepts with ease.
-      </p>
-    </section>
-    <section class="w-full py-12 md:py-24 lg:py-32">
-      <div class="px-4 md:px-6">
-        <h2
-          class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-8"
+        Algorithm Categories
+      </h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <BaseCard
+          title="Cryptography"
+          subtitle="Explore encryption, decryption, and secure communication techniques."
         >
-          Algorithm Categories
-        </h2>
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <BaseCard
-            title="Cryptography"
-            subtitle="Explore encryption, decryption, and secure communication techniques."
-          >
-            <Lock slot="icon" class="w-8 h-8" />
-            <BaseCTALink href="/cryptography">Explore</BaseCTALink>
-          </BaseCard>
-        </div>
+          <Lock slot="icon" class="w-8 h-8" />
+          <BaseLink href="/cryptography" button arrow>Explore</BaseLink>
+        </BaseCard>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 </Layout>

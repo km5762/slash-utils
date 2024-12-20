@@ -1,0 +1,20 @@
+---
+import BaseCard from "@/components/BaseCard.vue";
+import BaseLink from "@/components/BaseLink.vue";
+import ContactForm from "@/components/ContactForm.vue";
+import Envelope from "@/components/icons/Envelope.vue";
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout title="/UTILS" banner>
+  <Envelope slot="icon" class="w-16 h-16 text-teal-600" />
+  <span slot="title"> Contact Us </span>
+  <span slot="subtitle">
+    Have questions or feedback? Reach out using the form below.
+  </span>
+  <section
+    class="w-full py-12 md:py-24 lg:py-32 flex justify-center items-center"
+  >
+    <ContactForm client:load />
+  </section>
+</Layout>

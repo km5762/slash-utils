@@ -6,66 +6,55 @@ import BaseButtonLink from "@/components/BaseButtonLink.vue";
 import BaseDivider from "@/components/BaseDivider.vue";
 import BaseCard from "@/components/BaseCard.vue";
 import PencilSquare from "@/components/icons/PencilSquare.vue";
+import BaseLink from "@/components/BaseLink.vue";
 ---
 
-<Layout title="Online ECDSA Calculator With Intermediate Values">
-  <main>
-    <section
-      class="bg-slate-800 flex flex-col just-center py-12 md:py-24 lg:py-32 xl:py-48 border-b border-slate-600 shadow-lg px-4"
-    >
-      <div class="flex flex-col items-center gap-4">
-        <Lock class="w-16 h-16" />
-        <h1
-          class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none text-center"
+<Layout title="Online ECDSA Calculator With Intermediate Values" banner>
+  <Lock class="w-16 h-16 text-teal-600" slot="icon" />
+  <span slot="title">Cryptography</span>
+  <span slot="subtitle">
+    Explore the fascinating world of cryptography, from classical ciphers to
+    cutting-edge post-quantum techniques.
+  </span>
+  <section class="w-full py-12 md:py-24 lg:py-32">
+    <div class="px-4 md:px-6">
+      <h2
+        class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-8"
+      >
+        Algorithms
+      </h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <BaseCard
+          title="Block Ciphers"
+          subtitle="Algorithms that encrypt data in fixed-size blocks"
         >
-          Cryptography
-        </h1>
-        <p
-          class="mx-auto max-w-[800px] text-white/65 mt-1 md:text-xl dark:text-gray-40 text-center"
+          <Lock slot="icon" class="h-8 w-8" />
+          <ul>
+            <li>
+              <BaseLink
+                href="cryptography/aes"
+                class="text-lg text-teal-600"
+                arrow>Advanced Encryption Standard (AES)</BaseLink
+              >
+              <BaseDivider />
+            </li>
+          </ul></BaseCard
         >
-          Explore the fascinating world of cryptography, from classical ciphers
-          to cutting-edge post-quantum techniques.
-        </p>
+        <BaseCard
+          title="Digital Signatures"
+          subtitle="Techniques to verify the authenticity of digital messages"
+        >
+          <PencilSquare slot="icon" class="h-8 w-8" />
+          <ul>
+            <li>
+              <BaseLink href="cryptography/ecdsa" class="text-lg" arrow
+                >Elliptic Curve (ECDSA)</BaseLink
+              >
+              <BaseDivider />
+            </li>
+          </ul></BaseCard
+        >
       </div>
-    </section>
-    <section class="w-full py-12 md:py-24 lg:py-32">
-      <div class="px-4 md:px-6">
-        <h2
-          class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-8"
-        >
-          Algorithms
-        </h2>
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <BaseCard
-            title="Block Ciphers"
-            subtitle="Algorithms that encrypt data in fixed-size blocks"
-          >
-            <Lock slot="icon" class="h-8 w-8" />
-            <ul>
-              <li>
-                <BaseButtonLink href="cryptography/aes"
-                  >Advanced Encryption Standard (AES)</BaseButtonLink
-                >
-                <BaseDivider />
-              </li>
-            </ul></BaseCard
-          >
-          <BaseCard
-            title="Digital Signatures"
-            subtitle="Techniques to verify the authenticity of digital messages"
-          >
-            <PencilSquare slot="icon" class="h-8 w-8" />
-            <ul>
-              <li>
-                <BaseButtonLink href="cryptography/ecdsa"
-                  >Elliptic Curve (ECDSA)</BaseButtonLink
-                >
-                <BaseDivider />
-              </li>
-            </ul></BaseCard
-          >
-        </div>
-      </div>
-    </section>
-  </main>
+    </div>
+  </section>
 </Layout>

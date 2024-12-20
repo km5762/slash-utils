@@ -1,13 +1,15 @@
 ---
 import BaseDivider from "@/components/BaseDivider.vue";
+import BaseLink from "@/components/BaseLink.vue";
 import GitHub from "@/components/icons/GitHub.vue";
 import Linkedin from "@/components/icons/Linkedin.vue";
 
 interface Props {
   title: string;
+  banner?: boolean;
 }
 
-const { title } = Astro.props;
+const { title, banner } = Astro.props;
 ---
 
 <!doctype html>
@@ -27,18 +29,34 @@ const { title } = Astro.props;
     <header
       class="px-4 lg:px-6 h-14 flex items-center justify-between bg-slate-800 shadow-lg"
     >
-      <a href="/" class="font-extrabold">/UTILS</a>
-      <div class="flex gap-4">
-        <a href="">About</a>
-        <a href="">Contact</a>
+      <BaseLink href="/" class="font-extrabold text-3xl" nav>/UTILS</BaseLink>
+      <div class="flex gap-8">
+        <BaseLink href="" class="text-lg font-bold" nav>About</BaseLink>
+        <BaseLink href="/contact" class="text-lg font-bold" nav
+          >Contact</BaseLink
+        >
       </div>
     </header>
     <div class="flex-grow">
-      <slot />
+      <main>
+        {
+          banner && (
+            <section class="bg-slate-800 flex flex-col items-center gap-2 py-12 md:py-24 lg:py-32 xl:py-48 border-b border-slate-600 shadow-lg px-4">
+              <slot name="icon" class="w-16 h-16 text-teal-600" />
+              <h1 class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none text-center">
+                <slot name="title" />
+              </h1>
+              <p class="mx-auto max-w-[800px] text-white/65 mt-1 md:text-xl dark:text-gray-40 text-center">
+                <slot name="subtitle" />
+              </p>
+            </section>
+          )
+        }
+        <slot />
+      </main>
     </div>
-    <footer
-      class="px-4 lg:px-6 flex items-center justify-center bg-slate-800 py-3 gap-4"
-    >
+    <BaseDivider class="lg:mx-16 mx-8" />
+    <footer class="px-4 lg:px-6 flex items-center justify-center py-3 gap-4">
       <p class="text-white/65 font-light text-sm">
         &copy; 2024 Myles Ku. All rights reserved.
       </p>
