@@ -6,7 +6,7 @@
 
 You can explore the project live at the following URL:
 
-[Live Demo - Cryptography](https://slash-utils.pages.dev/)
+[Live Demo](https://slash-utils.pages.dev/)
 
 ## Features
 
