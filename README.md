@@ -1,54 +1,54 @@
-# Astro Starter Kit: Basics
+# /UTILS - Cryptography Education
 
-```sh
-npm create astro@latest -- --template basics
-```
+/UTILS is an educational website designed to help students understand complex cryptographic algorithms by providing a simplified, interactive, and lightweight interface. The website focuses on common cryptographic algorithms, including ECDSA, ECDH, AES, and more.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
+## Live Demo
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+You can explore the project live at the following URL:
 
-![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
+[Live Demo - Cryptography](https://slash-utils.pages.dev/cryptography/)
 
-## 🚀 Project Structure
+## Features
 
-Inside of your Astro project, you'll see the following folders and files:
+- **Cryptographic Algorithms**: Simplified explanations and visualizations of cryptographic algorithms, including ECDSA, ECDH, and AES.
+- **Custom Implementations**: All cryptographic algorithms are implemented entirely from scratch in Rust with WebAssembly, reducing dependency overhead and optimizing performance.
+- **Frontend**: Built with VueJS, Tailwind CSS, and Pinia, with static site generation powered by AstroJS.
+- **Optimized for Performance**: Algorithms are optimized for lightweight bundles, ensuring fast load times for an educational experience.
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── components/
-│   │   └── Card.astro
-│   ├── layouts/
-│   │   └── Layout.astro
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+## Technologies Used
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+- **Frontend**: VueJS, Tailwind CSS, Pinia, AstroJS
+- **Backend**: Rust, WebAssembly (WASM)
+- **Cryptographic Algorithms**: ECDSA, ECDH, AES, SHA256 (including custom big number, modular arithmetic, elliptic curve, and hashing implementations)
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+## Installation
 
-Any static assets, like images, can be placed in the `public/` directory.
+To run the project locally, follow these steps:
 
-## 🧞 Commands
+1. Clone the repository:
 
-All commands are run from the root of the project, from a terminal:
+   ```bash
+   git clone git@github.com:km5762/slash-utils.git
+   ```
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+2. Navigate to the project directory:
 
-## 👀 Want to learn more?
+   ```bash
+   cd slash-utils
+   ```
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+3. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+4. Run the project locally:
+
+   ```bash
+   npm run dev
+   ```
+
+## Contributing
+
+Feel free to open issues or submit pull requests for any improvements, bug fixes, or suggestions.
