@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="bg-slate-700 p-1 rounded-xl">
+  <div class="bg-slate-700 p-1 rounded-xl border-slate-600 border">
     <template v-for="(option, index) in options">
       <button
         :class="[

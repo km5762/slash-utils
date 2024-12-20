@@ -1,4 +1,8 @@
 ---
+import BaseDivider from "@/components/BaseDivider.vue";
+import GitHub from "@/components/icons/GitHub.vue";
+import Linkedin from "@/components/icons/Linkedin.vue";
+
 interface Props {
   title: string;
 }
@@ -9,7 +13,7 @@ const { title } = Astro.props;
 <!doctype html>
 <html
   lang="en"
-  class="bg-slate-900 font-mono text-white/80 h-full overflow-y-scroll"
+  class="bg-slate-900 font-mono text-white/90 h-full overflow-y-scroll"
 >
   <head>
     <meta charset="UTF-8" />
@@ -19,7 +23,31 @@ const { title } = Astro.props;
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
   </head>
-  <body>
-    <slot />
+  <body class="min-h-full flex flex-col">
+    <header
+      class="px-4 lg:px-6 h-14 flex items-center justify-between bg-slate-800 shadow-lg"
+    >
+      <a href="/" class="font-extrabold">/UTILS</a>
+      <div class="flex gap-4">
+        <a href="">About</a>
+        <a href="">Contact</a>
+      </div>
+    </header>
+    <div class="flex-grow">
+      <slot />
+    </div>
+    <footer
+      class="px-4 lg:px-6 flex items-center justify-center bg-slate-800 py-3 gap-4"
+    >
+      <p class="text-white/65 font-light text-sm">
+        &copy; 2024 Myles Ku. All rights reserved.
+      </p>
+      <a href="https://github.com/km5762">
+        <GitHub class="w-5 h-5" />
+      </a>
+      <a href="https://www.linkedin.com/in/myles-ku-a09383260/">
+        <Linkedin class="w-6 h-6" />
+      </a>
+    </footer>
   </body>
 </html>

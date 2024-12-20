@@ -6,14 +6,14 @@ import IntermediateValues from "./IntermediateValues.vue";
 ---
 
 <Layout title="Online ECDSA Calculator With Intermediate Values">
-  <main class="flex flex-col items-center">
+  <main class="flex flex-col items-center py-8">
     <h1 class="text-7xl font-bold pb-2 text-center">/ECDSA</h1>
     <Container class="flex gap-8 flex-wrap justify-center">
       <Container>
-          <InputsForm client:load/>
+        <InputsForm client:load />
       </Container>
       <Container>
-        <IntermediateValues client:load/>
+        <IntermediateValues client:load />
       </Container>
     </Container>
   </main>
