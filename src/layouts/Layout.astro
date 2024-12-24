@@ -27,7 +27,7 @@ const { title, banner } = Astro.props;
   </head>
   <body class="min-h-full flex flex-col">
     <header
-      class="px-4 lg:px-6 h-14 flex items-center justify-between bg-slate-800 shadow-lg"
+      class={`px-4 lg:px-6 h-14 flex items-center justify-between bg-slate-800 shadow-lg ${!banner ? "border-b border-slate-700" : ""}`}
     >
       <BaseLink href="/" class="font-extrabold text-3xl" nav>/UTILS</BaseLink>
       <div class="flex gap-8">
@@ -41,7 +41,7 @@ const { title, banner } = Astro.props;
       <main>
         {
           banner && (
-            <section class="bg-slate-800 flex flex-col items-center gap-2 py-12 md:py-24 lg:py-32 xl:py-48 border-b border-slate-600 shadow-lg px-4">
+            <section class="bg-slate-800 flex flex-col items-center gap-2 py-12 md:py-24 lg:py-32 xl:py-48 border-b border-slate-700 shadow-lg px-4">
               <slot name="icon" class="w-16 h-16 text-teal-600" />
               <h1 class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none text-center">
                 <slot name="title" />
@@ -52,7 +52,13 @@ const { title, banner } = Astro.props;
             </section>
           )
         }
-        <slot />
+        <div
+          class={(!banner
+            ? "py-6 md:py-12 lg:py-16"
+            : "py-12 md:py-24 lg:py-32") + " px-4 md:px-6"}
+        >
+          <slot />
+        </div>
       </main>
     </div>
     <BaseDivider class="lg:mx-16 mx-8" />

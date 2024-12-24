@@ -7,6 +7,7 @@ import BaseDivider from "@/components/BaseDivider.vue";
 import BaseCard from "@/components/BaseCard.vue";
 import PencilSquare from "@/components/icons/PencilSquare.vue";
 import BaseLink from "@/components/BaseLink.vue";
+import Key from "@/components/icons/Key.vue";
 ---
 
 <Layout title="Online ECDSA Calculator With Intermediate Values" banner>
@@ -16,43 +17,55 @@ import BaseLink from "@/components/BaseLink.vue";
     Explore the fascinating world of cryptography, from classical ciphers to
     cutting-edge post-quantum techniques.
   </span>
-  <section class="w-full py-12 md:py-24 lg:py-32">
-    <div class="px-4 md:px-6">
-      <h2
-        class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-8"
+  <section>
+    <h2
+      class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-8"
+    >
+      Algorithms
+    </h2>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <BaseCard
+        title="Block Ciphers"
+        subtitle="Algorithms that encrypt data in fixed-size blocks"
       >
-        Algorithms
-      </h2>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <BaseCard
-          title="Block Ciphers"
-          subtitle="Algorithms that encrypt data in fixed-size blocks"
-        >
-          <Lock slot="icon" class="h-8 w-8" />
-          <ul>
-            <li>
-              <BaseLink href="/aes" class="text-lg" arrow
-                >Advanced Encryption Standard (AES)</BaseLink
-              >
-              <BaseDivider />
-            </li>
-          </ul></BaseCard
-        >
-        <BaseCard
-          title="Digital Signatures"
-          subtitle="Techniques to verify the authenticity of digital messages"
-        >
-          <PencilSquare slot="icon" class="h-8 w-8" />
-          <ul>
-            <li>
-              <BaseLink href="/ecdsa" class="text-lg" arrow
-                >Elliptic Curve (ECDSA)</BaseLink
-              >
-              <BaseDivider />
-            </li>
-          </ul></BaseCard
-        >
-      </div>
+        <Lock slot="icon" class="h-8 w-8" />
+        <ul>
+          <li>
+            <BaseLink href="/cryptography/aes/" class="text-lg" arrow
+              >Advanced Encryption Standard (AES)</BaseLink
+            >
+            <BaseDivider />
+          </li>
+        </ul></BaseCard
+      >
+      <BaseCard
+        title="Digital Signatures"
+        subtitle="Techniques to verify the authenticity of digital messages"
+      >
+        <PencilSquare slot="icon" class="h-8 w-8" />
+        <ul>
+          <li>
+            <BaseLink href="/cryptography/ecdsa/" class="text-lg" arrow
+              >Elliptic Curve (ECDSA)</BaseLink
+            >
+            <BaseDivider />
+          </li>
+        </ul></BaseCard
+      >
+      <BaseCard
+        title="Key Generation"
+        subtitle="Methods for creating and sharing cryptographic keys securely"
+      >
+        <Key slot="icon" class="h-8 w-8" />
+        <ul>
+          <li>
+            <BaseLink href="/cryptography/ecdh/" class="text-lg" arrow
+              >Elliptic Curve Diffie Helman (ECDH)</BaseLink
+            >
+            <BaseDivider />
+          </li>
+        </ul></BaseCard
+      >
     </div>
   </section>
 </Layout>

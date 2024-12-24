@@ -15,22 +15,20 @@ import BaseLink from "@/components/BaseLink.vue";
     Dive into interactive modules covering a wide range of algorithms. Learn,
     experiment, and visualize complex concepts with ease.
   </span>
-  <section class="w-full py-12 md:py-24 lg:py-32">
-    <div class="px-4 md:px-6">
-      <h2
-        class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-8"
+  <section>
+    <h2
+      class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-8"
+    >
+      Algorithm Categories
+    </h2>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <BaseCard
+        title="Cryptography"
+        subtitle="Explore encryption, decryption, and secure communication techniques."
       >
-        Algorithm Categories
-      </h2>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <BaseCard
-          title="Cryptography"
-          subtitle="Explore encryption, decryption, and secure communication techniques."
-        >
-          <Lock slot="icon" class="w-8 h-8" />
-          <BaseLink href="/cryptography" button arrow>Explore</BaseLink>
-        </BaseCard>
-      </div>
+        <Lock slot="icon" class="w-8 h-8" />
+        <BaseLink href="/cryptography" button arrow>Explore</BaseLink>
+      </BaseCard>
     </div>
   </section>
 </Layout>

@@ -20,6 +20,7 @@ export default {
           height: "100%",
           backgroundColor: "rgba(255, 255, 255, 0)",
           transition: "background-color 0.3s ease-in-out",
+          borderRadius: "inherit",
         },
         ".hover-overlay:hover::before": {
           backgroundColor: "rgba(255, 255, 255, var(--overlay-opacity, 0.15))",

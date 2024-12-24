@@ -1,0 +1,38 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Container from "../../../components/Container.vue";
+import TextInput from "@/components/TextInput.vue";
+import Label from "@/components/Label.vue";
+import Typography from "@/components/Typography.vue";
+import TreeView from "@/components/TreeView.vue";
+import BaseButton from "@/components/BaseButton.vue";
+import StepsExplorer from "./StepsExplorer.vue";
+---
+
+<Layout title="Online ECDH Calculator With Intermediate Values">
+  <Typography variant="h1" class="text-center">/ECDH</Typography>
+  <div class="flex mx-auto gap-4 w-full max-w-6xl flex-wrap">
+    <Container class="flex-grow">
+      <Typography variant="h2">Input</Typography>
+      <div class="space-y-4">
+        <div>
+          <Label for="">Private Key 1</Label>
+          <TextInput />
+        </div>
+        <div>
+          <Label for="">Private Key 2</Label>
+          <TextInput />
+        </div>
+        <div>
+          <BaseButton class="bg-teal-600">Submit</BaseButton>
+        </div>
+      </div>
+    </Container>
+    <Container class="flex-grow">
+      <Typography variant="h2">Steps Explorer</Typography>
+      <StepsExplorer client:load />
+    </Container>
+  </div>
+</Layout>
+
+<script></script>

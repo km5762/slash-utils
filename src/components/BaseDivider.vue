@@ -1,3 +1,3 @@
 <template>
-  <hr class="border-slate-600" />
+  <hr class="border-slate-700" />
 </template>

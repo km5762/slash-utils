@@ -1,3 +1,5 @@
+mod p521;
+
 use curves::Config;
 use elliptic_curve::{Numeric, Point};
 use modular::Widened;
@@ -35,26 +37,37 @@ where
 
 #[cfg(test)]
 mod tests {
-    use big_num::{types::U256, BigUint};
+    use big_num::BigUint;
     use curves::P256;
-    use numeric::FromBeBytes;
+    use numeric::FromStrRadix;
 
     use super::*;
 
-    #[test]
-    fn it_works() {
-        let ecdh = Ecdh::new(P256);
-        let private_key_1 = BigUint::from_be_hex(
-            "5DCDF2A33538D7CF93A3680D4CB4E86A6814DA67AC5D8323EDBAAA59FAAA2DE4",
-        )
-        .unwrap();
-        let private_key_2 = BigUint::from_be_hex(
-            "8FED78431D82558D9006C3DEB06AB58D9DCCC97106875C6725D5F166255BA90A",
-        )
-        .unwrap();
+    pub struct TestVector<'a> {
+        pub private_key1: &'a str,
+        pub private_key2: &'a str,
+        pub shared_secret: &'a str,
+    }
 
-        let shared = ecdh.compute_shared_secret(&private_key_1, &private_key_2);
+    #[macro_export]
+    macro_rules! test_ecdh_vector {
+        ($vector:expr, $ecdh: expr) => {{
+            let private_key_1 = big_num::BigUint::from_be_hex($vector.private_key1).unwrap();
+            let private_key_2 = big_num::BigUint::from_be_hex($vector.private_key2).unwrap();
+            let shared_secret = big_num::BigUint::from_be_hex($vector.shared_secret).unwrap();
 
-        assert_eq!("", shared.unwrap().to_str_radix(16));
+            let computed_secret = $ecdh
+                .compute_shared_secret(&private_key_1, &private_key_2)
+                .unwrap();
+
+            if computed_secret != shared_secret {
+                eprintln!(
+                    "Test failed!\nExpected shared secret: {:x}\nActual shared secret: {:x}",
+                    shared_secret, computed_secret
+                );
+            }
+
+            assert_eq!(computed_secret, shared_secret);
+        }};
     }
 }
