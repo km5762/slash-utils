@@ -7,13 +7,16 @@ import { type LinkedNode, type Node } from "./TreeView.vue";
 const props = defineProps<{ node: LinkedNode }>();
 
 const clicked = ref(false);
-const expanded = ref(false);
 const li = ref<VNodeRef | null>(null);
-const selected = inject<Ref<string | number | null>>("selected", ref(null));
+const selected = inject<Ref<string | number | null>>("selected");
 const { focused, setFocused } = inject<{
   focused: Ref<LinkedNode | null>;
   setFocused: (node: LinkedNode | null) => void;
 }>("focused")!;
+const { expanded, setExpanded } = inject<{
+  expanded: Set<string | number>;
+  setExpanded: (id: string | number, value: boolean) => void;
+}>("expanded")!;
 
 watch(focused, () => {
   if (focused.value?.id === props.node.id) {
@@ -35,9 +38,11 @@ const isFocused = computed(() => {
   return false;
 });
 
+const isExpanded = computed(() => expanded.has(props.node.id));
+
 function handleClick() {
   if (props.node.children?.length) {
-    expanded.value = !expanded.value;
+    setExpanded(props.node.id, !isExpanded.value);
   }
 
   if (selected !== undefined && !props.node.children?.length) {
@@ -66,26 +71,25 @@ function handleBlur() {
     @focus="handleFocus"
     @blur="handleBlur"
     @mousedown="clicked = true"
+    @keydown.enter="handleClick"
   >
     <span
       :class="[
-        'hover-overlay cursor-pointer p-1 px-2 rounded-md w-full',
+        'hover-overlay cursor-pointer p-1 px-2 rounded-md w-full h-full inline-block',
         isSelected ? 'bg-teal-600' : '',
-        !clicked && isFocused
-          ? 'ring-blue ring-offset-2 ring-white ring-offset-blue-500 ring-1'
-          : '',
+        !clicked && isFocused ? 'ring-2 ring-teal-500' : '',
       ]"
       @click="handleClick"
       @mousedown="clicked = true"
     >
       <ChevronDown
         v-if="node.children?.length"
-        :class="{ 'rotate-180': expanded }"
+        :class="{ 'rotate-180': isExpanded }"
         class="inline w-4 h-4 transition-transform duration-300"
       />
       {{ node.title }}
     </span>
-    <ul v-if="expanded" class="ml-8 space-y-1 mt-1" role="group">
+    <ul v-if="isExpanded" class="ml-8 space-y-1 mt-1" role="group">
       <TreeNode v-for="child in node.children" :node="child" />
     </ul>
   </li>

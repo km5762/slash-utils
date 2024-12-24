@@ -9,7 +9,6 @@ export default {
       const newUtilities = {
         ".hover-overlay": {
           position: "relative",
-          overflow: "hidden",
         },
         ".hover-overlay::before": {
           content: "''",

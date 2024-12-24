@@ -30,6 +30,23 @@ const items = [
   },
   { id: 7, title: "app.vue", icon: "vscode-icons:file-type-vue" },
   { id: 8, title: "nuxt.config.ts", icon: "vscode-icons:file-type-nuxt" },
+  {
+    id: 9,
+    title: "composables",
+    icon: "lucide:folder",
+    children: [
+      {
+        id: 10,
+        title: "useAuth.ts",
+        icon: "vscode-icons:file-type-typescript",
+      },
+      {
+        id: 11,
+        title: "useUser.ts",
+        icon: "vscode-icons:file-type-typescript",
+      },
+    ],
+  },
 ];
 
 const selected = ref(null);

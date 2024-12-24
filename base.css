@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *:focus-visible {
+    @apply outline-none ring-0; /* Remove the default focus ring */
+    @apply ring-2 ring-teal-500; /* Customize the ring size and color */
+  }
+}
