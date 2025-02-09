@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import StepsExplorer from "../../../components/StepsExplorer.vue";
 import type { Node } from "@/components/TreeView.vue";
 import { Steps, StepKind } from "@utils/cryptography/ecdh/pkg/ecdh";
@@ -21,6 +21,16 @@ import init from "@utils/cryptography/ecdh/pkg/ecdh";
 const alicePrivateKey = ref("");
 const bobPrivateKey = ref("");
 const curve = ref<"NIST-P256" | "NIST-P384" | "NIST-P521">("NIST-P256");
+const maxLength = computed(() => {
+  switch (curve.value) {
+    case "NIST-P256":
+      return 64;
+    case "NIST-P384":
+      return 96;
+    case "NIST-P521":
+      return 132;
+  }
+});
 
 function computeSteps() {
   let curveType;
@@ -69,11 +79,15 @@ async function getPlaceholderSteps() {
         </div>
         <div>
           <Label for="alice-private-key">Alice Private Key</Label>
-          <TextInput id="alice-private-key" v-model="alicePrivateKey" />
+          <TextInput
+            id="alice-private-key"
+            v-model="alicePrivateKey"
+            :maxLength
+          />
         </div>
         <div>
           <Label for="bob-private-key">Bob Private Key</Label>
-          <TextInput id="bob-private-key" v-model="bobPrivateKey" />
+          <TextInput id="bob-private-key" v-model="bobPrivateKey" :maxLength />
         </div>
         <div>
           <BaseButton class="bg-teal-600" v-model="bobPrivateKey"
