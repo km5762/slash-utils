@@ -5,6 +5,7 @@ defineProps<{
   button?: boolean;
   arrow?: boolean;
   nav?: boolean;
+  href?: string;
 }>();
 </script>
 
