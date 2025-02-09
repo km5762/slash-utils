@@ -5,7 +5,8 @@ use core::{array::TryFromSliceError, cmp::min, fmt::LowerHex};
 
 use alloc::{boxed::Box, format, string::String, vec::Vec};
 use big_num::{
-    types::{U256, U384, U640}, ParseBigIntError,
+    types::{U256, U384, U640},
+    ParseBigIntError,
 };
 use curves::{Config, InvalidGeneratorError, P256, P384, P521};
 use elliptic_curve::{Numeric, Point};
@@ -85,7 +86,7 @@ impl From<ParseBigIntError> for EcdsaCustomError {
 #[wasm_bindgen]
 pub enum VerifyingError {
     ParseBigInt,
-    MessageTooLong
+    MessageTooLong,
 }
 
 impl From<ParseBigIntError> for VerifyingError {
@@ -319,7 +320,7 @@ where
     Ok(intermediate_values)
 }
 
-pub fn verify<T: Numeric, const N: usize> (
+pub fn verify<T: Numeric, const N: usize>(
     ecdsa: &Ecdsa<T>,
     x: &str,
     y: &str,
@@ -327,8 +328,11 @@ pub fn verify<T: Numeric, const N: usize> (
     s: &str,
     message: &str,
     hashing_algorithm_type: HashingAlgorithmType,
-) -> Result<VerifyingIntermediateValuesHex, VerifyingError> where     T: FromBeBytes<Bytes = [u8; N]> + LowerHex + FromStrRadix<Error = ParseBigIntError>,
-<T as Widen>::Output: Widened<T>,{
+) -> Result<VerifyingIntermediateValuesHex, VerifyingError>
+where
+    T: FromBeBytes<Bytes = [u8; N]> + LowerHex + FromStrRadix<Error = ParseBigIntError>,
+    <T as Widen>::Output: Widened<T>,
+{
     let mut intermediate_values = VerifyingIntermediateValuesHex::default();
     let key = Point::new(T::from_str_radix(x, 16)?, T::from_str_radix(y, 16)?);
 
@@ -369,7 +373,7 @@ pub fn verify<T: Numeric, const N: usize> (
             y: format!("{:x}", generated_point.y),
         };
     }
-    
+
     intermediate_values.valid = verifying_intermediate_values.valid;
 
     Ok(intermediate_values)

@@ -15,7 +15,7 @@ function filterInput(event: Event) {
 
 <template>
   <textarea
-    class="block rounded bg-slate-200 text-slate-950 border-slate-700 border px-2"
+    class="block w-full border-slate-600 bg-slate-700 border px-3 py-2 rounded-md"
     @input="filterInput"
     v-model="model"
   />

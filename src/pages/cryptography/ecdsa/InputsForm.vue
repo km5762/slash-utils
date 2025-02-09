@@ -273,7 +273,7 @@ function verifySignature() {
           >The base point which generates all other elliptic curve points in the
           subgroup</InfoToolTip
         >
-        <div>
+        <div class="flex items-center">
           <span>(</span>
           <Label for="base-point-x" hidden>Base Point X</Label>
           <TextInput
@@ -342,7 +342,7 @@ function verifySignature() {
           >The public key derived from the private key as a point on the
           curve</InfoToolTip
         >
-        <div>
+        <div class="flex items-center">
           <span>(</span>
           <Label for="public-key-x" hidden>Public Key X</Label>
           <TextInput

@@ -160,11 +160,8 @@ mod tests {
     #[test]
     fn p256() {
         let ecdh = Ecdh::new(P521);
-        let mut counter = 0;
         for test_vector in TEST_VECTORS {
-            println!("{}", counter);
             test_ecdh_vector!(test_vector, ecdh);
-            counter += 1;
         }
     }
 }

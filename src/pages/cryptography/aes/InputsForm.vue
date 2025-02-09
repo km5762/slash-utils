@@ -47,16 +47,12 @@ const intermediateValuesStore = useIntermediateValuesStore(pinia);
       <Container class="w-full max-w-96">
         <Label
           >Encrypted Block:
-          <textarea
-            class="block rounded bg-slate-200 text-slate-950 border-slate-700 border w-full px-2"
-            v-model="intermediateValuesStore.encryptedBlock"
-          />
+          <TextArea v-model="intermediateValuesStore.encryptedBlock" />
         </Label>
         <Label
           >Key:
-          <textarea
+          <TextArea
             type="text"
-            class="block rounded bg-slate-200 text-slate-950 border-slate-700 border w-full px-2"
             v-model="intermediateValuesStore.decryptionKey"
           />
         </Label>
