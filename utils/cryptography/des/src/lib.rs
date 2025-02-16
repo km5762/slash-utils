@@ -147,10 +147,8 @@ fn substitute(input: u64) -> u32 {
     substituted
 }
 
-pub fn encrypt(block: u64, key: u64) -> u64 {
+fn process_block(block: u64, keys: &[u64; 16]) -> u64 {
     let initial_permutation = permute(block, 64, &IP);
-    let keys = expand_key(key);
-
     let (mut left, mut right) = split(initial_permutation, 32);
 
     for i in 0..16 {
@@ -166,6 +164,17 @@ pub fn encrypt(block: u64, key: u64) -> u64 {
 
     let combined = ((right as u64) << 32) | (left as u64);
     permute(combined, 64, &IP_INV)
+}
+
+pub fn encrypt(block: u64, key: u64) -> u64 {
+    let keys = expand_key(key);
+    process_block(block, &keys)
+}
+
+pub fn decrypt(block: u64, key: u64) -> u64 {
+    let mut keys = expand_key(key);
+    keys.reverse();
+    process_block(block, &keys)
 }
 
 #[cfg(test)]
@@ -187,6 +196,8 @@ mod tests {
 
             let actual = encrypt(block, key);
             assert_eq!(expected, actual);
+            let decrypted = decrypt(actual, key);
+            assert_eq!(block, decrypted);
         }
     }
 }
