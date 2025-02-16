@@ -33,3 +33,22 @@ macro_rules! impl_bit {
 }
 
 impl_bit!(u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128);
+
+pub trait SetBit {
+    fn set_bit(&mut self, index: usize, value: bool);
+}
+
+macro_rules! impl_set_bit {
+    ($($t:ty)*) => {
+        $(
+            impl SetBit for $t {
+                fn set_bit(&mut self, index: usize, value: bool) {
+                    let mask = 1 << index;
+                    *self = (*self & !mask) | ((value as $t) * mask);
+                }
+            }
+        )*
+    }
+}
+
+impl_set_bit!(u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128);

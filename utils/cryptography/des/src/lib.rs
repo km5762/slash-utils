@@ -171,15 +171,22 @@ pub fn encrypt(block: u64, key: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    extern crate std;
+    use std::io::{self, BufRead};
 
     #[test]
     fn encryption() {
-        let block = 0x4E6F772069732074;
-        let key = 0x0123456789ABCDEF;
-        let expected: u64 = 0xB7A4873600FE1327;
+        let file = std::fs::File::open("./src/test_vectors.txt").unwrap();
+        let lines = io::BufReader::new(file).lines();
 
-        let output = encrypt(block, key);
+        for line in lines.map_while(Result::ok) {
+            let mut split = line.split(" ");
+            let key = u64::from_str_radix(split.next().unwrap(), 16).unwrap();
+            let block = u64::from_str_radix(split.next().unwrap(), 16).unwrap();
+            let expected = u64::from_str_radix(split.next().unwrap(), 16).unwrap();
 
-        assert_eq!(expected, output);
+            let actual = encrypt(block, key);
+            assert_eq!(expected, actual);
+        }
     }
 }
